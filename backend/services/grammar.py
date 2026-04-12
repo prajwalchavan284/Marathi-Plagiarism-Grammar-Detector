@@ -55,6 +55,23 @@ GENDER_MISMATCH_PAIRS = [
      "marathi": "लिंग चुकीचे: 'जो' पुल्लिंग आहे, परंतु पुढील शब्द स्त्रीलिंग आहे",
      "hint": "Use 'जी' for feminine (e.g., 'जी मुलगी')",
      "replace": r"जी\1\2"},
+    # Plural/Neuter relative pronoun + masculine singular noun
+    {"pattern": r"जे(\s+)(पोरगा|मुलगा|भाऊ|बाप|दादा|काका|नवरा)",
+     "english": "Number/Gender mismatch: 'जे' (plural/neuter) used with masculine singular noun",
+     "marathi": "वचन/लिंग चुकीचे: 'जे' अनेकवचनी/नपुंसकलिंगी आहे, परंतु पुढील शब्द पुल्लिंगी एकवचनी आहे",
+     "hint": "Use 'जो' for masculine singular (e.g., 'जो मुलगा')",
+     "replace": r"जो\1\2"},
+    # Deictic pronoun mismatches (हा/ही/हे)
+    {"pattern": r"हा(\s+)(पोरगी|मुलगी|आई|बहीण|वही|गाडी|सायकल)",
+     "english": "Gender mismatch: 'हा' (masculine) used with feminine noun",
+     "marathi": "लिंग चुकीचे: 'हा' पुल्लिंग आहे, परंतु पुढील शब्द स्त्रीलिंग आहे",
+     "hint": "Use 'ही' for feminine (e.g., 'ही मुलगी')",
+     "replace": r"ही\1\2"},
+    {"pattern": r"ही(\s+)(पोरगा|मुलगा|भाऊ|बाप|रस्ता|डब्बा|पेन)",
+     "english": "Gender mismatch: 'ही' (feminine) used with masculine noun",
+     "marathi": "लिंग चुकीचे: 'ही' स्त्रीलिंग आहे, परंतु पुढील शब्द पुल्लिंग आहे",
+     "hint": "Use 'हा' for masculine (e.g., 'हा मुलगा')",
+     "replace": r"हा\1\2"},
 ]
 
 # ── Common Wrong Word Pairs (Confusable Words) ────────────────────────────────
