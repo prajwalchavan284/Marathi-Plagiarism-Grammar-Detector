@@ -121,12 +121,13 @@ function renderResults(data, previewText) {
     const plag = data.plagiarism || {};
     const gram = data.grammar   || {};
 
-    // --- Plagiarism Ring (Attributes are set later for animation) ---
+    // --- Plagiarism Ring (Android Battery Style) ---
     const pct    = Math.round(plag.max_similarity || 0);
     const isPlag = pct > 50;
-    const circ   = 2 * Math.PI * 50;   // r=50 → 314.16
+    const circ   = 2 * Math.PI * 48;   // r=48 → 301.6
 
-    const ringColor = isPlag ? 'var(--ios-red)' : 'var(--ios-green)';
+    const ringGradient = isPlag ? 'url(#ring-grad-red)' : 'url(#ring-grad-green)';
+    const ringColor    = isPlag ? '#FF3B30' : '#34C759';
 
     const pctEl = document.getElementById('plag-pct');
     pctEl.textContent = `${pct}%`;
@@ -189,13 +190,13 @@ function renderResults(data, previewText) {
 
     resultsEl.classList.remove('hidden');
     
-    // Defer SVG ring painting so the CSS transition actually fires
+    // Defer SVG ring painting so the CSS transition fires after layout
     setTimeout(() => {
         const fg = document.getElementById('ring-fg');
         fg.setAttribute('stroke-dasharray', circ);
         fg.setAttribute('stroke-dashoffset', circ - (pct / 100) * circ);
-        fg.style.stroke = ringColor;
+        fg.style.stroke = ringGradient;
         
         resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 50);
+    }, 80);
 }
