@@ -20,36 +20,40 @@ DOUBLE_DANDA = "."
 # Each tuple: (wrong_pair_pattern, correct_alternatives, error_description)
 GENDER_MISMATCH_PAIRS = [
     # Feminine pronoun + masculine noun
-    {"pattern": r"ती\s+(पोरगा|मुलगा|भाऊ|बाप|दादा|आजोबा|काका|नवरा|भाऊजी|मुलगा)",
+    {"pattern": r"ती(\s+)(पोरगा|मुलगा|भाऊ|बाप|दादा|आजोबा|काका|नवरा|भाऊजी|मुलगा)",
      "english": "Gender mismatch: 'ती' (she/feminine) used with a masculine noun",
      "marathi": "लिंग चुकीचे: 'ती' स्त्रीलिंग आहे, परंतु पुढील शब्द पुल्लिंग आहे",
-     "hint": "Use 'तो' for masculine nouns (e.g., 'तो पोरगा')"},
+     "hint": "Use 'तो' for masculine nouns (e.g., 'तो पोरगा')",
+     "replace": r"तो\1\2"},
     # Masculine pronoun + feminine noun
-    {"pattern": r"तो\s+(पोरगी|मुलगी|आई|बहीण|आजी|काकी|मावशी|ताई|वहिनी|बायको)",
+    {"pattern": r"तो(\s+)(पोरगी|मुलगी|आई|बहीण|आजी|काकी|मावशी|ताई|वहिनी|बायको)",
      "english": "Gender mismatch: 'तो' (he/masculine) used with a feminine noun",
      "marathi": "लिंग चुकीचे: 'तो' पुल्लिंग आहे, परंतु पुढील शब्द स्त्रीलिंग आहे",
-     "hint": "Use 'ती' for feminine nouns (e.g., 'ती मुलगी')"},
+     "hint": "Use 'ती' for feminine nouns (e.g., 'ती मुलगी')",
+     "replace": r"ती\1\2"},
     # Masculine verb form + feminine subject
-    {"pattern": r"ती\s+[^\n।॥]+\s+(गेला|आला|केला|बसला|उठला|पडला|धावला|हसला|रडला|बोलला)",
+    {"pattern": r"ती(\s+[^\n।॥]+\s+)(गेला|आला|केला|बसला|उठला|पडला|धावला|हसला|रडला|बोलला)",
      "english": "Gender mismatch: 'ती' (feminine) with a masculine verb form",
      "marathi": "लिंग चुकीचे: 'ती' सोबत पुल्लिंग क्रियापद वापरले",
-     "hint": "Use feminine verb form (e.g., गेली, आली, केली)"},
+     "hint": "Use feminine verb form (e.g., गेली, आली, केली)",
+     "replace": r"तो\1\2"},
     # Feminine verb form + masculine subject
-    {"pattern": r"तो\s+[^\n।॥]+\s+(गेली|आली|केली|बसली|उठली|पडली|धावली|हसली|रडली|बोलली)",
+    {"pattern": r"तो(\s+[^\n।॥]+\s+)(गेली|आली|केली|बसली|उठली|पडली|धावली|हसली|रडली|बोलली)",
      "english": "Gender mismatch: 'तो' (masculine) with a feminine verb form",
      "marathi": "लिंग चुकीचे: 'तो' सोबत स्त्रीलिंग क्रियापद वापरले",
-     "hint": "Use masculine verb form (e.g., गेला, आला, केला)"},
+     "hint": "Use masculine verb form (e.g., गेला, आला, केला)",
+     "replace": r"ती\1\2"},
 ]
 
 # ── Common Wrong Word Pairs (Confusable Words) ────────────────────────────────
 COMMON_CONFUSABLES = [
-    {"pattern": r"शेती\s+करतो\s+आम्ही", "hint": "आम्ही शेती करतो",
+    {"pattern": r"शेती\s+करतो\s+आम्ही", "hint": "आम्ही शेती करतो", "replace": "आम्ही शेती करतो",
      "english": "Unusual word order: subject should come before verb",
      "marathi": "मराठीत कर्ता आधी येतो (आम्ही शेती करतो)"},
-    {"pattern": r"त्याचा\s+आई", "hint": "त्याची आई",
+    {"pattern": r"त्याचा(\s+)आई", "hint": "त्याची आई", "replace": r"त्याची\1आई",
      "english": "Incorrect prepositional gender (त्याची आई)",
      "marathi": "'आय' स्त्रीलिंगी असल्याने 'त्याची आई' लिहा"},
-    {"pattern": r"तिची\s+मुलगा", "hint": "तिचा मुलगा",
+    {"pattern": r"तिची(\s+)मुलगा", "hint": "तिचा मुलगा", "replace": r"तिचा\1मुलगा",
      "english": "Incorrect prepositional gender (तिचा मुलगा)",
      "marathi": "'मुलगा' पुल्लिंगी असल्याने 'तिचा मुलगा' लिहा"},
 ]
@@ -67,8 +71,8 @@ ORTHOGRAPHY_ERRORS = [
 
 # ── Pluralization (वचन) Errors ────────────────────────────────────────────────
 PLURALIZATION_ERRORS = [
-    {"pattern": r"अनेक\s+लोकं", "hint": "अनेक लोक", "english": "Incorrect pluralization. 'लोक' is already plural.", "marathi": "'अनेक लोक' लिहा. 'लोकं' हा शब्द व्याकरणात चुकीचा आहे."},
-    {"pattern": r"सगळे\s+माणसं", "hint": "सगळी माणसं किंवा सगळे पुरुष", "english": "Incorrect adjective-noun pluralization.", "marathi": "'सगळी माणसं' किंवा 'सगळे पुरुष' लिहा."},
+    {"pattern": r"अनेक(\s+)लोकं", "hint": "अनेक लोक", "replace": r"अनेक\1लोक", "english": "Incorrect pluralization. 'लोक' is already plural.", "marathi": "'अनेक लोक' लिहा. 'लोकं' हा शब्द व्याकरणात चुकीचा आहे."},
+    {"pattern": r"सगळे(\s+)माणसं", "hint": "सगळी माणसं किंवा सगळे पुरुष", "replace": r"सगळी\1माणसं", "english": "Incorrect adjective-noun pluralization.", "marathi": "'सगळी माणसं' किंवा 'सगळे पुरुष' लिहा."},
 ]
 
 # ── Marathi verb-subject agreement table ──────────────────────────────────────
@@ -223,9 +227,7 @@ class MarathiGrammarDetector:
         sorted_errors = sorted(errors, key=lambda x: x["offset"], reverse=True)
         
         for e in sorted_errors:
-            if e["replacements"] and e["replacements"][0] and e["ruleIssueType"] in ["spelling", "whitespace"]:
-                # Only forcefully inject direct word replacements for spelling and spacing. 
-                # Grammar hints are advice, not 1-to-1 word drop-ins.
+            if e["replacements"] and e["replacements"][0] and e["ruleIssueType"] in ["spelling", "whitespace", "grammar"]:
                 rep = e["replacements"][0]
                 start = e["offset"]
                 end = start + e["length"]
@@ -245,92 +247,50 @@ class MarathiGrammarDetector:
         regex_str = r"(^|\s|[।॥.,!?])(" + rule["pattern"] + r")($|\s|[।॥.,!?])"
         for m in re.finditer(regex_str, text):
             offset = m.start(2)
-            length = m.end(2) - offset
+            matched_text = m.group(2)
+            length = len(matched_text)
+            
+            replacement = rule.get("hint", "")
+            if "replace" in rule:
+                # Use regex sub to preserve spaces and construct exact replacement
+                replacement = re.sub(rule["pattern"], rule["replace"], matched_text)
+            elif issue_type == "spelling": 
+                replacement = rule.get("hint", "")
+                
             errors.append({
                 "message": rule["marathi"],
                 "english": rule["english"],
                 "offset": offset,
                 "length": length,
                 "context": text[max(0, offset-10):min(len(text), offset+length+10)],
-                "replacements": [rule.get("hint", "")],
+                "replacements": [replacement],
                 "ruleIssueType": issue_type
             })
 
     # ── Rule 9: Gender Agreement ──────────────────────────────────────────────
     def _check_gender_agreement(self, text: str, errors: List) -> None:
         for rule in GENDER_MISMATCH_PAIRS:
-            for m in re.finditer(rule["pattern"], text):
-                errors.append({
-                    "message": rule["marathi"],
-                    "english": rule["english"],
-                    "offset": m.start(),
-                    "length": m.end() - m.start(),
-                    "context": text[max(0, m.start()-10):m.end()+10],
-                    "replacements": [rule.get("hint", "")],
-                    "ruleIssueType": "grammar"
-                })
+            self._apply_rule(rule, text, errors, "grammar")
 
     # ── Rule 10: Verb-Subject Agreement ───────────────────────────────────────
     def _check_verb_subject_agreement(self, text: str, errors: List) -> None:
         for rule in VERB_SUBJECT_ERRORS:
-            for m in re.finditer(rule["pattern"], text):
-                errors.append({
-                    "message": rule["marathi"],
-                    "english": rule["english"],
-                    "offset": m.start(),
-                    "length": m.end() - m.start(),
-                    "context": text[max(0, m.start()-10):min(len(text), m.end()+10)],
-                    "replacements": [rule.get("hint", "")],
-                    "ruleIssueType": "grammar"
-                })
+            self._apply_rule(rule, text, errors, "grammar")
 
     # ── Rule 11: Confusable Words & Translitisisms ────────────────────────────
     def _check_confusables(self, text: str, errors: List) -> None:
         for rule in COMMON_CONFUSABLES:
-            for m in re.finditer(rule["pattern"], text):
-                errors.append({
-                    "message": rule["marathi"],
-                    "english": rule["english"],
-                    "offset": m.start(),
-                    "length": m.end() - m.start(),
-                    "context": text[max(0, m.start()-10):min(len(text), m.end()+10)],
-                    "replacements": [rule.get("hint", "")],
-                    "ruleIssueType": "grammar"
-                })
+            self._apply_rule(rule, text, errors, "grammar")
 
     # ── Rule 12: Orthography (Rhasva/Deergha) ─────────────────────────────────
     def _check_orthography(self, text: str, errors: List) -> None:
         for rule in ORTHOGRAPHY_ERRORS:
-            # We add \b to ensure word bounds, but \b fails on Devanagari often, 
-            # so we match explicitly surrounded by whitespace or punctuation
-            regex_str = r"(^|\s|[।॥.,!?])(" + rule["pattern"].replace(r"\b", "") + r")($|\s|[।॥.,!?])"
-            for m in re.finditer(regex_str, text):
-                # Group 2 is the actual matched word
-                offset = m.start(2)
-                length = m.end(2) - offset
-                errors.append({
-                    "message": rule["marathi"],
-                    "english": rule["english"],
-                    "offset": offset,
-                    "length": length,
-                    "context": text[max(0, offset-10):min(len(text), offset+length+10)],
-                    "replacements": [rule.get("hint", "")],
-                    "ruleIssueType": "spelling"
-                })
+            self._apply_rule(rule, text, errors, "spelling")
 
     # ── Rule 13: Pluralization (vachan) ───────────────────────────────────────
     def _check_pluralization(self, text: str, errors: List) -> None:
         for rule in PLURALIZATION_ERRORS:
-            for m in re.finditer(rule["pattern"], text):
-                errors.append({
-                    "message": rule["marathi"],
-                    "english": rule["english"],
-                    "offset": m.start(),
-                    "length": m.end() - m.start(),
-                    "context": text[max(0, m.start()-10):min(len(text), m.end()+10)],
-                    "replacements": [rule.get("hint", "")],
-                    "ruleIssueType": "grammar"
-                })
+            self._apply_rule(rule, text, errors, "grammar")
 
 
 
