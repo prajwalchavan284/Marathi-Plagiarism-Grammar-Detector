@@ -298,14 +298,21 @@ body {
     stroke: var(--blue);
     stroke-width: 12;
     stroke-linecap: round;
-    transition: stroke-dashoffset 1.2s cubic-bezier(0.17, 0.67, 0.14, 1.03), stroke 0.4s ease;
+    transition: stroke-dashoffset 1.5s cubic-bezier(0.17, 0.67, 0.14, 1.03), stroke 0.5s ease;
+    filter: drop-shadow(0 0 5px rgba(0,0,0,0.1));
 }
+/* Colorful Glows */
+.ring-glow-green  { filter: drop-shadow(0 0 8px rgba(46, 204, 113, 0.6)); }
+.ring-glow-yellow { filter: drop-shadow(0 0 8px rgba(241, 196, 15, 0.6)); }
+.ring-glow-red    { filter: drop-shadow(0 0 8px rgba(231, 76, 60, 0.6)); }
+
 .ring-center {
     position: absolute; inset: 0;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding-top: 5px;
 }
-.ring-pct { font-size: 2.1rem; font-weight: 800; letter-spacing: -1.2px; line-height: 1; }
-.ring-sub { font-size: 0.65rem; color: var(--grey-2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+.ring-pct { font-size: 2.4rem; font-weight: 800; letter-spacing: -1.5px; line-height: 0.9; margin-bottom: 2px; transition: color 0.4s; }
+.ring-sub { font-size: 0.7rem; color: var(--grey-2); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
 
 /* ── Status Pill ──────────────────────────── */
 .status-pill {
@@ -316,8 +323,9 @@ body {
     margin: 0.6rem 0 0.3rem;
     border: 1px solid transparent;
 }
-.pill-plag { background: rgba(217,48,37,.08);  border-color: rgba(217,48,37,.2);  color: var(--red); }
-.pill-orig { background: rgba(30,138,62,.08);  border-color: rgba(30,138,62,.2);  color: var(--green); }
+.pill-plag { background: rgba(231, 76, 60, 0.1); border-color: rgba(231, 76, 60, 0.3); color: #e74c3c; }
+.pill-warn { background: rgba(243, 156, 18, 0.1); border-color: rgba(243, 156, 18, 0.3); color: #e67e22; }
+.pill-orig { background: rgba(46, 204, 113, 0.1); border-color: rgba(46, 204, 113, 0.3); color: #27ae60; }
 
 .match-text { font-size: 0.74rem; color: var(--grey-2); text-align: center; white-space: pre-line; }
 

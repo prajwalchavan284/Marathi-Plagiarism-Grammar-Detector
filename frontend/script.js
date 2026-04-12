@@ -121,24 +121,43 @@ function renderResults(data, previewText) {
     const plag = data.plagiarism || {};
     const gram = data.grammar   || {};
 
-    // --- Plagiarism Ring (Android Battery Style) ---
-    const pct    = Math.round(plag.max_similarity || 0);
-    const isPlag = pct > 50;
-    const circ   = 2 * Math.PI * 48;   // r=48 → 301.6
+    // --- Plagiarism Ring (Android Battery Style - 3 Tier Colors) ---
+    const pct = Math.round(plag.max_similarity || 0);
+    const circ = 2 * Math.PI * 48; // r=48 → 301.6
 
-    const ringGradient = isPlag ? 'url(#ring-grad-red)' : 'url(#ring-grad-green)';
-    const ringColor    = isPlag ? '#FF3B30' : '#34C759';
+    let ringGradient, ringColor, pillText, pillClass, glowClass;
+
+    if (pct <= 15) {
+        ringGradient = 'url(#ring-grad-green)';
+        ringColor = '#27ae60';
+        pillText = '✓ Original Content';
+        pillClass = 'pill-orig';
+        glowClass = 'ring-glow-green';
+    } else if (pct <= 50) {
+        ringGradient = 'url(#ring-grad-yellow)';
+        ringColor = '#f39c12';
+        pillText = '⚠ Moderate Match';
+        pillClass = 'pill-warn';
+        glowClass = 'ring-glow-yellow';
+    } else {
+        ringGradient = 'url(#ring-grad-red)';
+        ringColor = '#e74c3c';
+        pillText = '⚠ Plagiarism Detected';
+        pillClass = 'pill-plag';
+        glowClass = 'ring-glow-red';
+    }
 
     const pctEl = document.getElementById('plag-pct');
     pctEl.textContent = `${pct}%`;
     pctEl.style.color = ringColor;
 
     const pill = document.getElementById('plag-pill');
-    pill.textContent = isPlag ? '⚠ Plagiarism Detected' : '✓ Original Content';
-    pill.className   = `status-pill ${isPlag ? 'pill-plag' : 'pill-orig'}`;
+    pill.textContent = pillText;
+    pill.className = `status-pill ${pillClass}`;
 
     const matchEl = document.getElementById('plag-match');
-    if (isPlag && plag.matched_document) {
+    const isMatched = pct > 0;
+    if (isMatched && plag.matched_document) {
         let txt = plag.matched_document;
         if (plag.matched_sentence) txt += `\n"${plag.matched_sentence.substring(0, 100)}…"`;
         matchEl.textContent = txt;
@@ -197,6 +216,10 @@ function renderResults(data, previewText) {
         fg.setAttribute('stroke-dashoffset', circ - (pct / 100) * circ);
         fg.style.stroke = ringGradient;
         
+        // Apply glow
+        fg.classList.remove('ring-glow-green', 'ring-glow-yellow', 'ring-glow-red');
+        fg.classList.add(glowClass);
+        
         resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 80);
+    }, 100);
 }
