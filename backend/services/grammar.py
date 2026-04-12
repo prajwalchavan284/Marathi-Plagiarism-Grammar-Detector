@@ -43,6 +43,18 @@ GENDER_MISMATCH_PAIRS = [
      "marathi": "लिंग चुकीचे: 'तो' सोबत स्त्रीलिंग क्रियापद वापरले",
      "hint": "Use masculine verb form (e.g., गेला, आला, केला)",
      "replace": r"ती\1\2"},
+    # Feminine relative pronoun + masculine noun
+    {"pattern": r"जी(\s+)(पोरगा|मुलगा|भाऊ|बाप|दादा|आजोबा|काका|नवरा|भाऊजी)",
+     "english": "Relative pronoun mismatch: 'जी' (feminine) used with a masculine noun",
+     "marathi": "लिंग चुकीचे: 'जी' स्त्रीलिंग आहे, परंतु पुढील शब्द पुल्लिंग आहे",
+     "hint": "Use 'जो' for masculine (e.g., 'जो मुलगा')",
+     "replace": r"जो\1\2"},
+    # Masculine relative pronoun + feminine noun
+    {"pattern": r"जो(\s+)(पोरगी|मुलगी|आई|बहीण|आजी|काकी|मावशी|ताई|वहिनी|बायको)",
+     "english": "Relative pronoun mismatch: 'जो' (masculine) used with a feminine noun",
+     "marathi": "लिंग चुकीचे: 'जो' पुल्लिंग आहे, परंतु पुढील शब्द स्त्रीलिंग आहे",
+     "hint": "Use 'जी' for feminine (e.g., 'जी मुलगी')",
+     "replace": r"जी\1\2"},
 ]
 
 # ── Common Wrong Word Pairs (Confusable Words) ────────────────────────────────
@@ -274,7 +286,7 @@ class MarathiGrammarDetector:
         sorted_errors = sorted(errors, key=lambda x: x["offset"], reverse=True)
 
         for e in sorted_errors:
-            if e["replacements"] and e["replacements"][0] and e["ruleIssueType"] in ["spelling", "whitespace", "grammar"]:
+            if e["replacements"] and e["replacements"][0] and e["ruleIssueType"] in ["spelling", "whitespace", "grammar", "punctuation"]:
                 rep = e["replacements"][0]
                 start = e["offset"]
                 end = start + e["length"]
@@ -375,14 +387,15 @@ class MarathiGrammarDetector:
         for s in sentences:
             stripped = s.strip()
             if stripped and not stripped[-1] in ".!?,":
+                last_char = stripped[-1]
                 # Check for missing full stop at end of line/sentence
                 errors.append({
                     "message": "वाक्याच्या शेवटी पूर्णविराम (.) हवा",
                     "english": "Sentence should end with a period (.)",
-                    "offset": offset + s.rfind(stripped[-1]),
+                    "offset": offset + s.rfind(last_char),
                     "length": 1,
                     "context": stripped[-15:],
-                    "replacements": ["."],
+                    "replacements": [f"{last_char}."],
                     "ruleIssueType": "punctuation"
                 })
             offset += len(s) + 1
