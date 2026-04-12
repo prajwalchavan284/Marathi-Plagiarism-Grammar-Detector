@@ -99,11 +99,11 @@ class MarathiGrammarDetector:
             return {"errors": [], "errors_count": 0, "corrected_text": ""}
 
         errors: List[Dict[str, Any]] = []
-        self._check_danda(text, errors)
+        # self._check_danda(text, errors)  # Removed per user request
         self._check_double_spaces(text, errors)
         self._check_repeated_words(text, errors)
         self._check_sentence_length(text, errors)
-        self._check_missing_space_after_danda(text, errors)
+        # self._check_missing_space_after_danda(text, errors) # Removed per user request
         self._check_repeated_punctuation(text, errors)
         self._check_digit_mixed_words(text, errors)
         self._check_leading_trailing_spaces(text, errors)
@@ -120,25 +120,7 @@ class MarathiGrammarDetector:
         }
 
     # ── Rule 1: Sentences should end with Period (.) ──────────────────────────
-    def _check_danda(self, text: str, errors: List) -> None:
-        sentences = re.split(r'[।॥\n.]', text)
-        char_offset = 0
-        for sent in sentences:
-            s = sent.strip()
-            # Only flag if the sentence has meaningful Devanagari characters
-            if s and re.search(r'[\u0900-\u097F]{5,}', s):
-                # Last non-whitespace char is not a period, danda or question mark
-                if not re.search(r'[।॥.!?]$', s):
-                    errors.append({
-                        "message": "वाक्याच्या शेवटी पूर्णविराम (.) असणे आवश्यक आहे",
-                        "english": "Sentence missing a full stop (.) at the end",
-                        "offset": char_offset,
-                        "length": len(s),
-                        "context": s[:60],
-                        "replacements": [s + "."],
-                        "ruleIssueType": "punctuation"
-                    })
-            char_offset += len(sent) + 1  # +1 for the split char
+    # [DISABLED per user request — no longer enforcing period at end of sentence]
 
     # ── Rule 2: Double spaces ─────────────────────────────────────────────────
     def _check_double_spaces(self, text: str, errors: List) -> None:
@@ -186,19 +168,7 @@ class MarathiGrammarDetector:
             char_offset += len(sent) + 1
 
     # ── Rule 5: Missing space after period ────────────────────────────────────
-    def _check_missing_space_after_danda(self, text: str, errors: List) -> None:
-        for m in re.finditer(r'[.।॥][^\s\n।॥.!?]', text):
-            # Ignore numbers like 3.14
-            if not re.match(r'\d\.\d', text[m.start()-1:m.start()+2]):
-                errors.append({
-                    "message": "पूर्णविरामानंतर (.) रिकामी जागा नाही",
-                    "english": "Missing space after full stop (.)",
-                    "offset": m.start(),
-                    "length": 2,
-                    "context": text[m.start():m.start()+15],
-                    "replacements": [text[m.start()] + " " + text[m.start()+1]],
-                    "ruleIssueType": "punctuation"
-                })
+    # [DISABLED per user request — no longer enforcing period formatting]
 
     # ── Rule 6: Repeated punctuation (!!, ??, ।।) ─────────────────────────────
     def _check_repeated_punctuation(self, text: str, errors: List) -> None:
@@ -264,11 +234,7 @@ class MarathiGrammarDetector:
         # Finally apply safe global whitespace/punctuation fixes
         corrected = re.sub(r'  +', ' ', corrected)                 # double spaces
         corrected = re.sub(r'([!?।,])\1+', r'\1', corrected)       # repeated punct
-        corrected = re.sub(r'([।॥.])([^\s\n।॥.!?])', r'\1 \2', corrected)  # space after period
-        # Fix missing periods
-        if [e for e in errors if "missing a full stop" in e["english"]]:
-             if not re.search(r'[।॥.!?]$', corrected.strip()):
-                  corrected = corrected.strip() + "."
+        # (Missing Period logic removed per user request)
         
         return corrected.strip()
 
