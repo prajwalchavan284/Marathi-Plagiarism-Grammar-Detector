@@ -1,11 +1,14 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
 import uvicorn
 import logging
 import io
 import pdfplumber
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +54,12 @@ async def extract_text(upload: UploadFile) -> str:
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
+
+# Serve the main HTML page at the root URL
+@app.get("/")
+async def serve_index():
+    index_path = os.path.join(os.path.dirname(__file__), "../frontend/index.html")
+    return FileResponse(index_path)
 
 class AnalyzeTextRequest(BaseModel):
     text: str
@@ -103,6 +112,9 @@ async def analyze_file(
 
     return {"text": text[:2000], "plagiarism": plagiarism_results, "grammar": grammar_results}
 
+# Mount the rest of the frontend folder (CSS, JS, etc.)
+frontend_dir = os.path.join(os.path.dirname(__file__), "../frontend")
+app.mount("/", StaticFiles(directory=frontend_dir), name="frontend")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

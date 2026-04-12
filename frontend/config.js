@@ -1,3 +1,3 @@
-// Set this to your Railway backend URL after deploying.
-// Example: window.API_BASE = "https://your-app.railway.app/api";
-window.API_BASE = "http://localhost:8000/api";
+// Because FastAPI now serves the frontend, we can use a relative relative path!
+// This works perfectly on localhost, Railway, Render, or anywhere else without changes.
+window.API_BASE = "/api";
