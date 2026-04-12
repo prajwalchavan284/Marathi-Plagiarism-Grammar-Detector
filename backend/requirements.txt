@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pydantic
+python-multipart
+numpy
+pandas
+torch
+scikit-learn
+sentence-transformers
+language_tool_python
+matplotlib
+seaborn
+joblib

@@ -1,0 +1,392 @@
+/* ─────────────────────────────────────────────
+   DeepCheck – Cross-Platform Design System
+   Works on: macOS Safari/Chrome, Windows Chrome/Edge/Firefox
+────────────────────────────────────────────── */
+
+:root {
+    /* Accent Colors */
+    --blue:   #0071E3;   /* slightly darker than iOS blue – renders well on Windows */
+    --red:    #D93025;
+    --green:  #1E8A3E;
+    --grey-1: #1D1D1F;   /* primary label */
+    --grey-2: #6E6E73;   /* secondary label */
+    --grey-3: #AEAEB2;   /* placeholder */
+    --grey-4: #D1D1D6;   /* separator */
+    --grey-5: #E8E8ED;   /* subtle bg */
+    --grey-6: #F5F5F7;   /* page bg */
+    --white:  #FFFFFF;
+
+    /* Radii */
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+
+    /* Shadows – cross-platform friendly (no blur exploit) */
+    --shadow-card: 0 1px 2px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.08);
+    --shadow-btn:  0 1px 4px rgba(0,113,227,.3);
+}
+
+/* ── Reset ────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Base ─────────────────────────────────── */
+html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-size: 15px;
+}
+
+body {
+    /* Universal font stack:
+       Inter on all platforms, then system fallbacks for Mac (SF Pro)/Windows (Segoe UI) */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background: var(--grey-6);
+    color: var(--grey-1);
+    line-height: 1.55;
+    min-height: 100vh;
+}
+
+/* ── Custom Scrollbar (works Chrome, Edge; hidden on Firefox which uses native) */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--grey-4); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--grey-3); }
+
+/* ── Navigation Bar ───────────────────────── */
+.nav-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    /* fallback for browsers without backdrop-filter */
+    background: rgba(245,245,247,0.95);
+    border-bottom: 1px solid var(--grey-4);
+}
+
+/* Progressive enhancement – add blur only where supported */
+@supports (backdrop-filter: blur(1px)) {
+    .nav-bar {
+        background: rgba(245,245,247,0.82);
+        backdrop-filter: saturate(180%) blur(16px);
+        -webkit-backdrop-filter: saturate(180%) blur(16px);
+    }
+}
+
+.nav-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0.8rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.nav-icon  { font-size: 1.25rem; color: var(--blue); }
+.nav-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.2px; }
+.nav-subtitle { font-size: 0.78rem; color: var(--grey-2); }
+
+/* ── Page Layout ──────────────────────────── */
+.page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1.75rem 1.5rem 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* ── iOS-style Card ───────────────────────── */
+.ios-card {
+    background: var(--white);
+    border-radius: var(--r-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--grey-4);   /* visible on Windows LCD */
+}
+
+/* ── Card Title Row ───────────────────────── */
+.ios-card-title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    margin-bottom: 1.1rem;
+}
+.section-number {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--blue);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+.section-title {
+    font-size: 0.98rem;
+    font-weight: 600;
+    letter-spacing: -0.15px;
+    display: flex; align-items: center; gap: 0.45rem;
+}
+.section-sub { font-size: 0.8rem; color: var(--grey-2); margin-top: 2px; }
+.optional-badge {
+    font-size: 0.68rem; font-weight: 500;
+    background: var(--grey-5);
+    color: var(--grey-2);
+    padding: 0.12rem 0.45rem;
+    border-radius: 20px;
+    border: 1px solid var(--grey-4);
+}
+
+/* ── Segmented Control ────────────────────── */
+.seg-control {
+    display: inline-flex;
+    background: var(--grey-5);
+    border: 1px solid var(--grey-4);
+    border-radius: var(--r-sm);
+    padding: 3px;
+    margin-bottom: 1rem;
+    gap: 2px;
+}
+.seg-btn {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 0.35rem 1rem;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--grey-2);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 0.3rem;
+    transition: background 0.15s, color 0.12s, box-shadow 0.12s;
+    white-space: nowrap;
+    user-select: none;
+}
+.seg-btn.active {
+    background: var(--white);
+    color: var(--grey-1);
+    box-shadow: 0 1px 4px rgba(0,0,0,.10);
+}
+
+/* ── Panels ───────────────────────────────── */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── Textarea ─────────────────────────────── */
+.ios-textarea {
+    width: 100%;
+    background: var(--grey-5);
+    border: 1px solid var(--grey-4);
+    border-radius: var(--r-md);
+    padding: 0.85rem 1rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+    resize: vertical;
+    outline: none;
+    color: var(--grey-1);
+    transition: border-color 0.15s, background 0.15s;
+    line-height: 1.55;
+    min-height: 120px;
+}
+.ios-textarea::placeholder { color: var(--grey-3); }
+.ios-textarea:focus {
+    border-color: var(--blue);
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(0,113,227,.12);
+}
+
+/* ── Drop Zone ────────────────────────────── */
+.drop-zone {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 0.45rem;
+    border: 2px dashed var(--grey-4);
+    border-radius: var(--r-md);
+    padding: 2.5rem 1rem;
+    cursor: pointer;
+    text-align: center;
+    color: var(--grey-2);
+    transition: border-color 0.18s, background 0.18s;
+}
+.drop-zone:hover { border-color: var(--blue); background: rgba(0,113,227,.04); }
+.drop-icon { font-size: 2rem; color: var(--blue); }
+.drop-title { font-weight: 600; font-size: 0.9rem; color: var(--grey-1); }
+.drop-sub   { font-size: 0.78rem; color: var(--grey-2); }
+.file-chip {
+    margin-top: 0.4rem;
+    background: rgba(0,113,227,.08);
+    color: var(--blue);
+    border: 1px solid rgba(0,113,227,.2);
+    border-radius: 20px;
+    padding: 0.18rem 0.75rem;
+    font-size: 0.78rem; font-weight: 500;
+}
+
+/* ── Primary Button ───────────────────────── */
+.ios-btn {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.45rem;
+    width: 100%; margin-top: 1.1rem;
+    padding: 0.8rem 1rem;
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: var(--r-md);
+    font-family: inherit;
+    font-size: 0.95rem; font-weight: 600;
+    cursor: pointer;
+    letter-spacing: -0.1px;
+    transition: opacity 0.12s, transform 0.1s;
+    box-shadow: var(--shadow-btn);
+    -webkit-appearance: none;
+}
+.ios-btn:hover   { opacity: 0.88; }
+.ios-btn:active  { transform: scale(0.985); }
+.ios-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+/* ── Error Message ────────────────────────── */
+.error-msg {
+    margin-top: 0.7rem;
+    font-size: 0.83rem;
+    color: var(--red);
+    font-weight: 500;
+}
+
+/* ── Spinner ──────────────────────────────── */
+.spinner {
+    width: 17px; height: 17px;
+    border: 2px solid rgba(255,255,255,.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.65s linear infinite;
+}
+.hidden { display: none !important; }
+
+/* ── Results ──────────────────────────────── */
+.metrics-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+.metric-card { display: flex; flex-direction: column; align-items: center; }
+
+.metric-header {
+    display: flex; align-items: center;
+    gap: 0.4rem; align-self: flex-start;
+    margin-bottom: 1rem;
+}
+.metric-icon  { font-size: 1rem; color: var(--grey-2); }
+.metric-label {
+    font-size: 0.72rem; font-weight: 600;
+    color: var(--grey-2);
+    text-transform: uppercase; letter-spacing: 0.06em;
+}
+
+/* ── Score Ring ───────────────────────────── */
+.ring-wrap { position: relative; width: 130px; height: 130px; }
+.score-ring { width: 130px; height: 130px; transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: var(--grey-5); stroke-width: 10; }
+.ring-fg {
+    fill: none;
+    stroke: var(--blue);
+    stroke-width: 10;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.9s cubic-bezier(.4,0,.2,1), stroke 0.35s;
+}
+.ring-center {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+}
+.ring-pct { font-size: 1.75rem; font-weight: 700; letter-spacing: -1px; }
+
+/* ── Status Pill ──────────────────────────── */
+.status-pill {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    border-radius: 20px;
+    padding: 0.28rem 0.85rem;
+    font-size: 0.8rem; font-weight: 600;
+    margin: 0.6rem 0 0.3rem;
+    border: 1px solid transparent;
+}
+.pill-plag { background: rgba(217,48,37,.08);  border-color: rgba(217,48,37,.2);  color: var(--red); }
+.pill-orig { background: rgba(30,138,62,.08);  border-color: rgba(30,138,62,.2);  color: var(--green); }
+
+.match-text { font-size: 0.74rem; color: var(--grey-2); text-align: center; white-space: pre-line; }
+
+/* ── Grammar ──────────────────────────────── */
+.grammar-hero { text-align: center; margin-bottom: 0.75rem; width: 100%; }
+.gram-number  { font-size: 3.2rem; font-weight: 700; letter-spacing: -2px; display: block; }
+.gram-label   { font-size: 0.75rem; color: var(--grey-2); }
+
+.grammar-list { width: 100%; max-height: 280px; overflow-y: auto; }
+.grammar-item {
+    background: var(--grey-5);
+    border: 1px solid var(--grey-4);
+    border-radius: var(--r-sm);
+    padding: 0.65rem 0.8rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.82rem;
+}
+.grammar-item .gmsg { font-weight: 600; margin-bottom: 0.2rem; }
+.grammar-item .gctx { color: var(--grey-2); font-size: 0.77rem; font-style: italic; }
+.grammar-item .gsug { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.4rem; }
+.sug-pill {
+    background: rgba(0,113,227,.08);
+    color: var(--blue);
+    border: 1px solid rgba(0,113,227,.18);
+    border-radius: 5px;
+    padding: 0.12rem 0.45rem;
+    font-size: 0.74rem; font-weight: 500;
+    cursor: default;
+}
+.no-issues {
+    color: var(--green); font-size: 0.85rem;
+    text-align: center; padding: 1rem 0;
+    display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+}
+
+/* ── Text Preview ─────────────────────────── */
+.preview-icon { font-size: 1rem; color: var(--grey-2); }
+.text-pre {
+    background: var(--grey-5);
+    border: 1px solid var(--grey-4);
+    border-radius: var(--r-sm);
+    padding: 0.85rem 1rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--grey-2);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 0.75rem;
+}
+
+/* ── Animations ───────────────────────────── */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+#results { animation: fadeUp 0.3s ease; }
+
+/* ── Responsive ───────────────────────────── */
+@media (max-width: 640px) {
+    .page { padding: 1rem 0.85rem 4rem; gap: 1rem; }
+    .metrics-row { grid-template-columns: 1fr; }
+    .nav-subtitle { display: none; }
+    .ios-card { padding: 1.1rem; }
+}
+
+/* ── Desktop large screens ────────────────── */
+@media (min-width: 1200px) {
+    .page { max-width: 1100px; }
+    .metrics-row { grid-template-columns: 1fr 1fr; }
+}

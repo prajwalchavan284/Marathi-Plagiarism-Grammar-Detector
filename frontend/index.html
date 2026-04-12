@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Marathi Plagiarism and Grammar Detection powered by AI">
+    <title>DeepCheck – Marathi Plagiarism & Grammar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="style.css?v=7">
+</head>
+
+<body>
+
+    <!-- Nav Bar -->
+    <div class="nav-bar">
+        <div class="nav-inner">
+            <div class="nav-left">
+                <i class="bi bi-doc-text-fill nav-icon"></i>
+                <span class="nav-title">Marathi Plagiarism & Grammar Detector</span>
+            </div>
+        </div>
+    </div>
+
+    <main class="page">
+
+        <!-- STEP 1: REFERENCE -->
+        <div class="ios-card">
+            <div class="ios-card-title-row">
+                <span class="section-number">1</span>
+                <div>
+                    <div class="section-title">Reference Source
+                        <span class="optional-badge">Optional</span>
+                    </div>
+                    <div class="section-sub">Upload the original book text to compare against</div>
+                </div>
+            </div>
+
+            <div class="seg-control" id="ref-seg">
+                <button class="seg-btn active" data-target="ref-text-panel">
+                    <i class="bi bi-keyboard"></i> Text
+                </button>
+                <button class="seg-btn" data-target="ref-file-panel">
+                    <i class="bi bi-paperclip"></i> File
+                </button>
+            </div>
+
+            <div class="panel active" id="ref-text-panel">
+                <textarea id="ref-text-input" class="ios-textarea" rows="5"
+                    placeholder="Paste original reference text…"></textarea>
+            </div>
+            <div class="panel" id="ref-file-panel">
+                <label class="drop-zone" id="ref-drop">
+                    <input type="file" id="ref-file-input" accept=".txt,.pdf" hidden>
+                    <i class="bi bi-cloud-arrow-up drop-icon"></i>
+                    <p class="drop-title">Upload Reference</p>
+                    <p class="drop-sub">TXT or PDF</p>
+                    <span id="ref-file-name" class="file-chip hidden"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- STEP 2: TARGET -->
+        <div class="ios-card">
+            <div class="ios-card-title-row">
+                <span class="section-number">2</span>
+                <div>
+                    <div class="section-title">Text to Check</div>
+                    <div class="section-sub">Enter the Marathi text you want to analyze</div>
+                </div>
+            </div>
+
+            <div class="seg-control" id="target-seg">
+                <button class="seg-btn active" data-target="target-text-panel">
+                    <i class="bi bi-keyboard"></i> Text
+                </button>
+                <button class="seg-btn" data-target="target-file-panel">
+                    <i class="bi bi-paperclip"></i> File
+                </button>
+            </div>
+
+            <div class="panel active" id="target-text-panel">
+                <textarea id="target-text-input" class="ios-textarea" rows="5"
+                    placeholder="मराठी मजकूर येथे पेस्ट करा…"></textarea>
+            </div>
+            <div class="panel" id="target-file-panel">
+                <label class="drop-zone" id="target-drop">
+                    <input type="file" id="target-file-input" accept=".txt,.pdf" hidden>
+                    <i class="bi bi-cloud-arrow-up drop-icon"></i>
+                    <p class="drop-title">Upload Document</p>
+                    <p class="drop-sub">TXT or PDF</p>
+                    <span id="target-file-name" class="file-chip hidden"></span>
+                </label>
+            </div>
+
+            <div id="error-msg" class="error-msg"></div>
+
+            <button class="ios-btn" id="analyze-btn">
+                <i class="bi bi-wand-stars" id="btn-icon"></i>
+                <span id="btn-label">Analyze</span>
+                <span id="btn-spinner" class="spinner hidden"></span>
+            </button>
+        </div>
+
+        <!-- RESULTS -->
+        <div id="results" class="hidden">
+
+            <!-- Metrics Row -->
+            <div class="metrics-row">
+
+                <!-- Plagiarism Card -->
+                <div class="ios-card metric-card">
+                    <div class="metric-header">
+                        <i class="bi bi-shield-exclamation metric-icon"></i>
+                        <span class="metric-label">Plagiarism</span>
+                    </div>
+                    <div class="ring-wrap">
+                        <svg class="score-ring" viewBox="0 0 120 120">
+                            <circle class="ring-bg" cx="60" cy="60" r="50" />
+                            <circle class="ring-fg" id="ring-fg" cx="60" cy="60" r="50" stroke-dasharray="314"
+                                stroke-dashoffset="314" />
+                        </svg>
+                        <div class="ring-center">
+                            <span id="plag-pct" class="ring-pct">—</span>
+                        </div>
+                    </div>
+                    <div id="plag-pill" class="status-pill">—</div>
+                    <p id="plag-match" class="match-text"></p>
+                </div>
+
+                <!-- Grammar Card -->
+                <div class="ios-card metric-card">
+                    <div class="metric-header">
+                        <i class="bi bi-text-paragraph metric-icon"></i>
+                        <span class="metric-label">Grammar</span>
+                    </div>
+                    <div class="grammar-hero">
+                        <span id="gram-count" class="gram-number">0</span>
+                        <span class="gram-label">Issues Found</span>
+                    </div>
+                    <div id="grammar-list" class="grammar-list"></div>
+                </div>
+            </div>
+
+            <!-- Text Preview -->
+            <div class="ios-card" id="preview-card">
+                <div class="ios-card-title-row" style="margin-bottom:0.75rem;">
+                    <i class="bi bi-doc-text preview-icon"></i>
+                    <div class="section-title" style="font-size:0.95rem;">Submitted Text</div>
+                </div>
+                <pre id="text-preview" class="text-pre"></pre>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script src="script.js?v=7"></script>
+</body>
+
+</html>
