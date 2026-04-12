@@ -1,6 +1,4 @@
 import numpy as np
-import pandas as pd
-import torch
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
@@ -10,7 +8,6 @@ import string
 import logging
 from dataclasses import dataclass
 from typing import List, Tuple, Dict, Any, Optional
-from functools import lru_cache
 import unicodedata
 
 logger = logging.getLogger(__name__)
@@ -110,9 +107,9 @@ class EnhancedSimilarityCalculator:
     def calculate_tfidf_similarity_batch(self, queries: List[str], corpus_docs: List[str]) -> np.ndarray:
         try:
             processed_corpus = [self.text_processor.preprocess_text(doc) for doc in corpus_docs]
-            
+
             custom_max_df = 1.0 if len(corpus_docs) < 10 else self.config.max_df
-            
+
             local_vectorizer = TfidfVectorizer(
                 max_features=self.config.max_features,
                 min_df=1,
@@ -123,7 +120,7 @@ class EnhancedSimilarityCalculator:
                 strip_accents='unicode',
                 token_pattern=r'\w+'
             )
-            
+
             corpus_tfidf = local_vectorizer.fit_transform(processed_corpus)
             similarities = []
             for i in range(0, len(queries), self.config.batch_size):
@@ -180,12 +177,12 @@ class EnhancedMarathiPlagiarismDetector:
     def detect_plagiarism_single(self, query_text: str) -> Dict[str, Any]:
         if not self.corpus or not query_text:
             return {"error": "Invalid query or corpus"}
-        
+
         tfidf_sim = self.similarity_calculator.calculate_tfidf_similarity_batch([query_text], self.corpus)[0]
         bert_sim = self.similarity_calculator.calculate_bert_similarity_batch([query_text], self.corpus)[0]
-        
+
         ensemble_sim = (self.config.tfidf_weight * tfidf_sim) + (self.config.bert_weight * bert_sim)
-        
+
         max_similarity = float(np.max(ensemble_sim))
         max_index = int(np.argmax(ensemble_sim))
         threshold = self.config.threshold
@@ -197,7 +194,7 @@ class EnhancedMarathiPlagiarismDetector:
                 'similarity': float(np.round(score * 100, 2)),
                 'is_plagiarized': bool(score >= threshold)
             })
-            
+
         details.sort(key=lambda x: x['similarity'], reverse=True)
 
         return {
@@ -244,7 +241,6 @@ class EnhancedMarathiPlagiarismDetector:
 
         best_score = 0.0
         best_ref_sent = ''
-        best_query_sent = ''
         sentence_results = []
 
         for q in query_sentences:
@@ -272,7 +268,6 @@ class EnhancedMarathiPlagiarismDetector:
                 if score > best_score:
                     best_score = score
                     best_ref_sent = r
-                    best_query_sent = q
 
         sentence_results.sort(key=lambda x: x['similarity'], reverse=True)
 

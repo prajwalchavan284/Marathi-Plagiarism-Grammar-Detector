@@ -218,14 +218,14 @@ class MarathiGrammarDetector:
     def _autocorrect(self, text: str, errors: List) -> str:
         if not errors:
             return text
-            
+
         corrected = text
-        # Apply strict string replacement based on exact offsets in reverse order 
+        # Apply strict string replacement based on exact offsets in reverse order
         # so earlier offsets don't shift when we replace later text.
-        
+
         # Sort errors by offset descending
         sorted_errors = sorted(errors, key=lambda x: x["offset"], reverse=True)
-        
+
         for e in sorted_errors:
             if e["replacements"] and e["replacements"][0] and e["ruleIssueType"] in ["spelling", "whitespace", "grammar"]:
                 rep = e["replacements"][0]
@@ -237,7 +237,7 @@ class MarathiGrammarDetector:
         corrected = re.sub(r'  +', ' ', corrected)                 # double spaces
         corrected = re.sub(r'([!?।,])\1+', r'\1', corrected)       # repeated punct
         # (Missing Period logic removed per user request)
-        
+
         return corrected.strip()
 
     # ── Universal Regex Helper for Devanagari ─────────────────────────────────
@@ -249,14 +249,14 @@ class MarathiGrammarDetector:
             offset = m.start(2)
             matched_text = m.group(2)
             length = len(matched_text)
-            
+
             replacement = rule.get("hint", "")
             if "replace" in rule:
                 # Use regex sub to preserve spaces and construct exact replacement
                 replacement = re.sub(rule["pattern"], rule["replace"], matched_text)
-            elif issue_type == "spelling": 
+            elif issue_type == "spelling":
                 replacement = rule.get("hint", "")
-                
+
             errors.append({
                 "message": rule["marathi"],
                 "english": rule["english"],
