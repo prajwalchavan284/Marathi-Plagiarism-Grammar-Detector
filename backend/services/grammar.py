@@ -147,6 +147,27 @@ PLURALIZATION_ERRORS = [
     {"pattern": r"सगळे(\s+)माणसं", "hint": "सगळी माणसं किंवा सगळे पुरुष", "replace": r"सगळी\1माणसं", "english": "Incorrect adjective-noun pluralization.", "marathi": "'सगळी माणसं' किंवा 'सगळे पुरुष' लिहा."},
 ]
 
+# ── Structural & Clause Errors ───────────────────────────────────────────────
+STRUCTURAL_ERRORS = [
+    # Missing 'Tar' after 'Jar'
+    {"pattern": r"जर\s+([^,]+),\s+(?!तर\b)(.+)",
+     "hint": "जर ... , तर ...", "replace": r"जर \1, तर \2",
+     "english": "Missing 'तर' in subordination: 'जर' must pair with 'तर'",
+     "marathi": "'जर' सोबत 'तर' वापरणे आवश्यक आहे (उदा. जर ..., तर ...)"},
+    
+    # Improper start with 'Karan ki'
+    {"pattern": r"^कारण\s+की\s+([^,]+),\s+(.+)",
+     "hint": "... म्हणून ...", "replace": r"\1 म्हणून \2",
+     "english": "Improper sentence start: Use 'म्हणून' to connect the result",
+     "marathi": "वाक्याची सुरुवात 'कारण की' ने टाळा. त्याऐवजी 'म्हणून' वापरा"},
+     
+    # Conditional Tense Consistency (Example 4)
+    {"pattern": r"(केला|झाला|केले)\s+असता,\s+तर\s+([^\s]+)\s+([^\s]+)\s+होतोस",
+     "hint": "... झाला असतास", "replace": r"\1 असता, तर \2 \3 झाला असतास",
+     "english": "Conditional tense mismatch: use 'झाला असतास' with past conditional",
+     "marathi": "काळ विसंगती: 'केला असता' सोबत 'झाला असतास' वापरा"},
+]
+
 # ── Marathi verb-subject agreement table ──────────────────────────────────────
 # Pattern: wrong_subject + wrong_verb_ending
 VERB_SUBJECT_ERRORS = [
@@ -192,6 +213,7 @@ class MarathiGrammarDetector:
         self._check_pluralization(text, errors)
         self._check_sov_structure(text, errors)
         self._check_punctuation(text, errors)
+        self._check_clause_structures(text, errors)
 
         return {
             "errors": errors,
@@ -418,6 +440,26 @@ class MarathiGrammarDetector:
             offset += len(s) + 1
 
 
+
+    # ── Rule 18: Structural / Clause Rules ────────────────────────────────────
+    def _check_clause_structures(self, text: str, errors: List) -> None:
+        for rule in STRUCTURAL_ERRORS:
+            # We use MULTILINE because Karan Ki rule checks for ^
+            for m in re.finditer(rule["pattern"], text, re.MULTILINE):
+                offset = m.start()
+                length = len(m.group(0))
+                
+                replacement = re.sub(rule["pattern"], rule["replace"], m.group(0), flags=re.MULTILINE)
+                
+                errors.append({
+                    "message": rule["marathi"],
+                    "english": rule["english"],
+                    "offset": offset,
+                    "length": length,
+                    "context": text[max(0, offset-5):min(len(text), offset+length+10)],
+                    "replacements": [replacement],
+                    "ruleIssueType": "grammar"
+                })
 
 # ── Singleton instance (no startup delay — no Java, no downloads) ─────────────
 grammar_detector = MarathiGrammarDetector()
