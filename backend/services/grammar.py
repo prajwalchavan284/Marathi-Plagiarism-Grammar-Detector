@@ -58,15 +58,58 @@ COMMON_CONFUSABLES = [
      "marathi": "'मुलगा' पुल्लिंगी असल्याने 'तिचा मुलगा' लिहा"},
 ]
 
-# ── Orthography (Rhasva/Deergha) Errors ───────────────────────────────────────
+# ── Orthography (Rhasva/Deergha/Anuswar) Errors ──────────────────────────────
 ORTHOGRAPHY_ERRORS = [
-    {"pattern": r"नाहि", "hint": "नाही", "english": "Spelling error (Rhasva/Deergha)", "marathi": "'नाही' असे लिहा (दीर्घ 'ही')"},
-    {"pattern": r"आणी", "hint": "आणि", "english": "Spelling error (Rhasva/Deergha)", "marathi": "'आणि' असे लिहा (ह्रस्व 'णि')"},
-    {"pattern": r"परंतू", "hint": "परंतु", "english": "Spelling error (Rhasva/Deergha)", "marathi": "'परंतु' असे लिहा (ह्रस्व 'तु')"},
-    {"pattern": r"माहीती", "hint": "माहिती", "english": "Spelling error (Rhasva/Deergha)", "marathi": "'माहिती' असे लिहा (ह्रस्व 'हि')"},
-    {"pattern": r"हळुहळु", "hint": "हळूहळू", "english": "Spelling error (Rhasva/Deergha)", "marathi": "'हळूहळू' असे लिहा"},
-    {"pattern": r"महीना", "hint": "महिना", "english": "Spelling error (Rhasva/Deergha)", "marathi": "'महिना' असे लिहा (ह्रस्व 'हि')"},
-    {"pattern": r"पाणि", "hint": "पाणी", "english": "Spelling error (Rhasva/Deergha)", "marathi": "'पाणी' दीर्घ 'णी' असते"},
+    # Vowel Length (Deergha at end is standard for many Marathi words)
+    {"pattern": r"नाहि", "hint": "नाही", "english": "Spelling: terminal 'i' should be long (deergha)", "marathi": "'नाही' असे लिहा (दीर्घ 'ही')"},
+    {"pattern": r"आणी", "hint": "आणि", "english": "Spelling: 'आणि' takes short 'i' (rhasva)", "marathi": "'आणि' असे लिहा (ह्रस्व 'णि')"},
+    {"pattern": r"परंतू", "hint": "परंतु", "english": "Spelling: 'परंतु' takes short 'u' (rhasva)", "marathi": "'परंतु' असे लिहा (ह्रस्व 'तु')"},
+    {"pattern": r"माहीती", "hint": "माहिती", "english": "Spelling: 'माहिती' takes short second 'i'", "marathi": "'माहिती' असे लिहा (ह्रस्व 'हि')"},
+    {"pattern": r"हळुहळु", "hint": "हळूहळू", "english": "Spelling error in 'hadvu-hadvu'", "marathi": "'हळूहळू' असे लिहा (दोन्ही कडे दीर्घ 'ऊ')"},
+    {"pattern": r"महीना", "hint": "महिना", "english": "Spelling error in 'mahina'", "marathi": "'महिना' असे लिहा (ह्रस्व 'हि')"},
+    {"pattern": r"पाणि", "hint": "पाणी", "english": "Spelling: 'water' ends in long 'i'", "marathi": "'पाणी' दीर्घ 'णी' असते"},
+    {"pattern": r"कवि", "hint": "कवी", "english": "Spelling: 'poet' ends in long 'i' in standard Marathi", "marathi": "'कवी' दीर्घ 'वी' असते"},
+    
+    # Anuswar (Nasals) usage
+    {"pattern": r"आमु", "hint": "आमूं", "english": "Missing nasal (anuswar) on terminal vowel", "marathi": "अनुस्वार हवा: 'आमूं' लिहा"},
+    {"pattern": r"देउ", "hint": "देऊं", "english": "Missing nasal (anuswar) on terminal vowel", "marathi": "अनुस्वार हवा: 'देऊं' लिहा"},
+    {"pattern": r"घेउ", "hint": "घेऊं", "english": "Missing nasal (anuswar) on terminal vowel", "marathi": "अनुस्वार हवा: 'घेऊं' लिहा"},
+]
+
+# ── Adjective Agreement Errors (A-ending Adjectives) ─────────────────────────
+# Pattern: adjective + mismatching noun
+ADJECTIVE_AGREEMENT_ERRORS = [
+    # Masculine Adj + Feminine Noun
+    {"pattern": r"चांगला(\s+)(मुलगी|आई|बहीण|शाळा|गाडी|सायकल|वही)",
+     "hint": "चांगली", "replace": r"चांगली\1\2",
+     "english": "Adjective mismatch: 'चांगला' (masculine) with feminine noun",
+     "marathi": "विशेषण चुकीचे: स्त्रीलिंगी नामासाठी 'चांगली' वापरा"},
+    # Feminine Adj + Masculine Noun
+    {"pattern": r"चांगली(\s+)(मुलगा|भाऊ|बाप|शाळा|रस्ता|डब्बा|पेन|गव्हा|वाघ)",
+     "hint": "चांगला", "replace": r"चांगला\1\2",
+     "english": "Adjective mismatch: 'चांगली' (feminine) with masculine noun",
+     "marathi": "विशेषण चुकीचे: पुल्लिंगी नामासाठी 'चांगला' वापरा"},
+    # Plural Adj + Singular Noun
+    {"pattern": r"चांगले(\s+)(मुलगा|मुलगी|पोरगा|पोरगी)",
+     "hint": "चांगला/चांगली", "replace": r"चांगला\1\2",
+     "english": "Adjective mismatch: plural form with singular noun",
+     "marathi": "विशेषण चुकीचे: एकवचनी नामासाठी एकवचनी विशेषण वापरा"},
+]
+
+# ── Vibhakti (Case Endings) & Samanya Rupa Errors ─────────────────────────────
+VIBHAKTI_ERRORS = [
+    {"pattern": r"घरत", "hint": "घरात", "replace": "घरात",
+     "english": "Incorrect inflection: 'घर' should become 'घरा' before suffix 'त'",
+     "marathi": "सामान्यरूप चुकीचे: 'घर' चे 'घरा-' होऊन मग 'त' जोडा (घरात)"},
+    {"pattern": r"शाळात", "hint": "शाळेत", "replace": "शाळेत",
+     "english": "Incorrect inflection: 'शाळा' should become 'शाळे' before suffix 'त'",
+     "marathi": "सामान्यरूप चुकीचे: 'शाळेत' असे लिहा"},
+    {"pattern": r"मीला", "hint": "मला", "replace": "मला",
+     "english": "Pronoun error: 'मी' becomes 'मला' with 'ला' suffix",
+     "marathi": "'मीला' ऐवजी 'मला' वापरा"},
+    {"pattern": r"मीचा", "hint": "माझा", "replace": "माझा",
+     "english": "Pronoun error: Use 'माझा' instead of 'मीचा'",
+     "marathi": "'मीचा' ऐवजी 'माझा' वापरा"},
 ]
 
 # ── Pluralization (वचन) Errors ────────────────────────────────────────────────
@@ -112,10 +155,14 @@ class MarathiGrammarDetector:
         self._check_digit_mixed_words(text, errors)
         self._check_leading_trailing_spaces(text, errors)
         self._check_gender_agreement(text, errors)
+        self._check_adjective_agreement(text, errors)
         self._check_verb_subject_agreement(text, errors)
         self._check_confusables(text, errors)
         self._check_orthography(text, errors)
+        self._check_vibhakti(text, errors)
         self._check_pluralization(text, errors)
+        self._check_sov_structure(text, errors)
+        self._check_punctuation(text, errors)
 
         return {
             "errors": errors,
@@ -287,10 +334,58 @@ class MarathiGrammarDetector:
         for rule in ORTHOGRAPHY_ERRORS:
             self._apply_rule(rule, text, errors, "spelling")
 
-    # ── Rule 13: Pluralization (vachan) ───────────────────────────────────────
+    # ── Rule 13: Adjective Agreement ──────────────────────────────────────────
+    def _check_adjective_agreement(self, text: str, errors: List) -> None:
+        for rule in ADJECTIVE_AGREEMENT_ERRORS:
+            self._apply_rule(rule, text, errors, "grammar")
+
+    # ── Rule 14: Vibhakti / Samanya Rupa ──────────────────────────────────────
+    def _check_vibhakti(self, text: str, errors: List) -> None:
+        for rule in VIBHAKTI_ERRORS:
+            self._apply_rule(rule, text, errors, "grammar")
+
+    # ── Rule 15: Pluralization (vachan) ───────────────────────────────────────
     def _check_pluralization(self, text: str, errors: List) -> None:
         for rule in PLURALIZATION_ERRORS:
             self._apply_rule(rule, text, errors, "grammar")
+
+    # ── Rule 16: SOV Structure (Basic) ────────────────────────────────────────
+    def _check_sov_structure(self, text: str, errors: List) -> None:
+        # Check if sentences end with characteristic Marathi verb markers
+        # If a line seems like it has a verb in the middle followed by too many words
+        # e.g., "Mi khato amba" (I eat mango)
+        # Regex to detect Subject + Verb + Object instead of Subject + Object + Verb
+        # This is a heuristic: Pronoun + Verb + Noun
+        for m in re.finditer(r"\b(मी|तो|ती|ते|आम्ही|तुम्ही|आपण)\s+(खातो|पितो|करतो|आहे|गेलो|येतो)\s+([^\s।॥.!?]+)\b", text):
+            errors.append({
+                "message": "वाक्यरचना चुकीची: क्रियापद शेवटी असायला हवे (SOV structure)",
+                "english": "Marathi word order: Verb should generally come at the end (SOV).",
+                "offset": m.start(),
+                "length": len(m.group(0)),
+                "context": m.group(0),
+                "replacements": [],
+                "ruleIssueType": "grammar"
+            })
+
+    # ── Rule 17: Punctuation (Missing Full Stop, etc) ─────────────────────────
+    def _check_punctuation(self, text: str, errors: List) -> None:
+        # Check if sentence ends with punctuation
+        sentences = re.split(r'[\u0964\u0965\n]', text)
+        offset = 0
+        for s in sentences:
+            stripped = s.strip()
+            if stripped and not stripped[-1] in ".!?,":
+                # Check for missing full stop at end of line/sentence
+                errors.append({
+                    "message": "वाक्याच्या शेवटी पूर्णविराम (.) हवा",
+                    "english": "Sentence should end with a period (.)",
+                    "offset": offset + s.rfind(stripped[-1]),
+                    "length": 1,
+                    "context": stripped[-15:],
+                    "replacements": ["."],
+                    "ruleIssueType": "punctuation"
+                })
+            offset += len(s) + 1
 
 
 
