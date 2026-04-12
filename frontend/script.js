@@ -123,17 +123,19 @@ function renderResults(data, previewText) {
 
     // --- Plagiarism Ring ---
     const pct    = Math.round(plag.max_similarity || 0);
-    const isPlag = plag.is_plagiarized;
+    const isPlag = pct > 50;
     const circ   = 2 * Math.PI * 50;   // r=50 → 314.16
+
+    const ringColor = isPlag ? 'var(--ios-red)' : 'var(--ios-green)';
 
     const fg = document.getElementById('ring-fg');
     fg.style.strokeDasharray  = circ;
     fg.style.strokeDashoffset = circ - (pct / 100) * circ;
-    fg.style.stroke = isPlag ? 'var(--ios-red)' : 'var(--ios-green)';
+    fg.style.stroke = ringColor;
 
     const pctEl = document.getElementById('plag-pct');
     pctEl.textContent = `${pct}%`;
-    pctEl.style.color = isPlag ? 'var(--ios-red)' : 'var(--ios-green)';
+    pctEl.style.color = ringColor;
 
     const pill = document.getElementById('plag-pill');
     pill.textContent = isPlag ? '⚠ Plagiarism Detected' : '✓ Original Content';
@@ -188,16 +190,6 @@ function renderResults(data, previewText) {
         } else {
             document.getElementById('grammar-correction-container').style.display = 'none';
         }
-    }
-
-    // --- Preview ---
-    const previewCard = document.getElementById('preview-card');
-    const pre = document.getElementById('text-preview');
-    if (previewText && previewText.trim()) {
-        pre.textContent = previewText.trim();
-        previewCard.style.display = '';
-    } else {
-        previewCard.style.display = 'none';
     }
 
     resultsEl.classList.remove('hidden');
