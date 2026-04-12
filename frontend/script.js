@@ -1,4 +1,4 @@
-const API = "http://localhost:8000/api";
+const API = window.API_BASE || "http://localhost:8000/api";
 
 // ── Segmented Controls ─────────────────────────────────────────────────────
 document.querySelectorAll('.seg-control').forEach(ctrl => {
