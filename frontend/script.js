@@ -157,16 +157,25 @@ function renderResults(data, previewText) {
     const gList = document.getElementById('grammar-list');
     gList.innerHTML = '';
     if (errors.length === 0) {
-        gList.innerHTML = '<div class="no-issues"><i class="bi bi-checkmark-circle-fill"></i> No issues found</div>';
+        gList.innerHTML = '<div class="no-issues"><i class="bi bi-check-circle-fill"></i> No issues found</div>';
     } else {
         errors.forEach(e => {
             const item = document.createElement('div');
             item.className = 'grammar-item';
-            const sugs = (e.replacements || []).slice(0, 5)
-                .map(r => `<span class="sug-pill">${r}</span>`).join('');
+            const sugs = (e.replacements || []).slice(0, 3)
+                .map(r => {
+                    // shorten long replacement suggestions
+                    const short = r.length > 40 ? r.substring(0, 40) + '…' : r;
+                    return `<span class="sug-pill">${short}</span>`;
+                }).join('');
+            // Show English description as headline, Marathi as subtitle
+            const headline = e.english || e.message || 'Grammar issue';
+            const subtitle = e.english && e.message ? e.message : '';
+            const ctx      = e.context || '';
             item.innerHTML = `
-                <div class="gmsg">${e.message}</div>
-                <div class="gctx">${e.context}</div>
+                <div class="gmsg">${headline}</div>
+                ${subtitle ? `<div class="gctx" style="color:var(--grey-1);font-style:normal;">${subtitle}</div>` : ''}
+                ${ctx ? `<div class="gctx">${ctx}</div>` : ''}
                 ${sugs ? `<div class="gsug">${sugs}</div>` : ''}`;
             gList.appendChild(item);
         });

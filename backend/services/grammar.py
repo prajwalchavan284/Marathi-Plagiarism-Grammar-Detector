@@ -11,17 +11,56 @@ logger = logging.getLogger(__name__)
 
 # ── Marathi-specific patterns ─────────────────────────────────────────────────
 
-# Common Marathi filler / redundant words
-FILLER_WORDS = {"की", "तर", "परंतु", "आणि", "व", "आणखी"}
-
 # Marathi sentence boundary characters
 DANDA = "\u0964"      # ।
 DOUBLE_DANDA = "\u0965"  # ॥
 
-# Correct vibhakti (case suffix) patterns:
-#   subject + ने/ला/ते/ची/चा/चे/ना/त/तून, etc.
-# (Simplified detection of missing or repeated suffixes)
-VIBHAKTI = ["ने", "ला", "ते", "ची", "चा", "चे", "ना", "त", "तून", "शी", "स"]
+# ── Gender Agreement Pairs ────────────────────────────────────────────────────
+# Format: (feminine_pronoun, masculine_noun) → should raise an error
+# Each tuple: (wrong_pair_pattern, correct_alternatives, error_description)
+GENDER_MISMATCH_PAIRS = [
+    # Feminine pronoun + masculine noun
+    {"pattern": r"ती\s+(पोरगा|मुलगा|भाऊ|बाप|दादा|आजोबा|काका|नवरा|भाऊजी|मुलगा)",
+     "english": "Gender mismatch: 'ती' (she/feminine) used with a masculine noun",
+     "marathi": "लिंग चुकीचे: 'ती' स्त्रीलिंग आहे, परंतु पुढील शब्द पुल्लिंग आहे",
+     "hint": "Use 'तो' for masculine nouns (e.g., 'तो पोरगा')"},
+    # Masculine pronoun + feminine noun
+    {"pattern": r"तो\s+(पोरगी|मुलगी|आई|बहीण|आजी|काकी|मावशी|ताई|वहिनी)",
+     "english": "Gender mismatch: 'तो' (he/masculine) used with a feminine noun",
+     "marathi": "लिंग चुकीचे: 'तो' पुल्लिंग आहे, परंतु पुढील शब्द स्त्रीलिंग आहे",
+     "hint": "Use 'ती' for feminine nouns (e.g., 'ती मुलगी')"},
+    # Masculine verb form + feminine subject
+    {"pattern": r"ती\s+\S+\s+(गेला|आला|केला|बसला|उठला|पडला|धावला|हसला|रडला|बोलला)",
+     "english": "Gender mismatch: 'ती' (feminine) with a masculine verb form",
+     "marathi": "लिंग चुकीचे: 'ती' सोबत पुल्लिंग क्रियापद वापरले",
+     "hint": "Use feminine verb form (e.g., गेली, आली, केली)"},
+    # Feminine verb form + masculine subject
+    {"pattern": r"तो\s+\S+\s+(गेली|आली|केली|बसली|उठली|पडली|धावली|हसली|रडली|बोलली)",
+     "english": "Gender mismatch: 'तो' (masculine) with a feminine verb form",
+     "marathi": "लिंग चुकीचे: 'तो' सोबत स्त्रीलिंग क्रियापद वापरले",
+     "hint": "Use masculine verb form (e.g., गेला, आला, केला)"},
+]
+
+# ── Common Wrong Word Pairs (Confusable Words) ────────────────────────────────
+COMMON_CONFUSABLES = [
+    {"wrong": "शेती करतो आम्ही",    "right": "आम्ही शेती करतो",
+     "english": "Unusual word order: subject should come before verb in Marathi",
+     "marathi": "शब्द क्रम चुकीचा: मराठीत कर्ता आधी येतो"},
+]
+
+# ── Marathi verb-subject agreement table ──────────────────────────────────────
+# Pattern: wrong_subject + wrong_verb_ending
+VERB_SUBJECT_ERRORS = [
+    # आम्ही / आपण with singular verb
+    {"pattern": r"(आम्ही|आपण)\s+(\S+ला|\S+ली)\b",
+     "english": "Verb agreement error: plural subject 'आम्ही/आपण' with singular verb",
+     "marathi": "क्रियापद अनुबंध चुकीचे: अनेकवचन कर्त्यासाठी अनेकवचन क्रियापद वापरा",
+     "hint": "Use plural verb form ending in 'लो' or 'लो' for आम्ही"},
+    # मी with plural verb
+    {"pattern": r"मी\s+(\S+लो|\S+लो)\b",
+     "english": "Verb agreement error: 'मी' (I) with plural verb form",
+     "marathi": "क्रियापद अनुबंध चुकीचे: 'मी' सोबत एकवचन क्रियापद वापरा"},
+]
 
 
 class MarathiGrammarDetector:
@@ -39,6 +78,8 @@ class MarathiGrammarDetector:
         self._check_repeated_punctuation(text, errors)
         self._check_digit_mixed_words(text, errors)
         self._check_leading_trailing_spaces(text, errors)
+        self._check_gender_agreement(text, errors)
+        self._check_verb_subject_agreement(text, errors)
 
         return {
             "errors": errors,
@@ -174,6 +215,35 @@ class MarathiGrammarDetector:
         corrected = re.sub(r'([।॥])([^\s\n।॥])', r'\1 \2', corrected)  # space after danda
         corrected = corrected.strip()
         return corrected
+
+    # ── Rule 9: Gender Agreement ──────────────────────────────────────────────
+    def _check_gender_agreement(self, text: str, errors: List) -> None:
+        for rule in GENDER_MISMATCH_PAIRS:
+            for m in re.finditer(rule["pattern"], text):
+                errors.append({
+                    "message": rule["marathi"],
+                    "english": rule["english"],
+                    "offset": m.start(),
+                    "length": m.end() - m.start(),
+                    "context": text[max(0, m.start()-10):m.end()+10],
+                    "replacements": [rule.get("hint", "")],
+                    "ruleIssueType": "grammar"
+                })
+
+    # ── Rule 10: Verb-Subject Agreement ───────────────────────────────────────
+    def _check_verb_subject_agreement(self, text: str, errors: List) -> None:
+        for rule in VERB_SUBJECT_ERRORS:
+            for m in re.finditer(rule["pattern"], text):
+                errors.append({
+                    "message": rule["marathi"],
+                    "english": rule["english"],
+                    "offset": m.start(),
+                    "length": m.end() - m.start(),
+                    "context": text[max(0, m.start()-10):m.end()+10],
+                    "replacements": [rule.get("hint", "")],
+                    "ruleIssueType": "grammar"
+                })
+
 
 
 # ── Singleton instance (no startup delay — no Java, no downloads) ─────────────
