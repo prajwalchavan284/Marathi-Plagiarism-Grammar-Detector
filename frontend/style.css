@@ -244,6 +244,7 @@ body {
     transition: opacity 0.12s, transform 0.1s;
     box-shadow: var(--shadow-btn);
     -webkit-appearance: none;
+    appearance: none;
 }
 .ios-btn:hover   { opacity: 0.88; }
 .ios-btn:active  { transform: scale(0.985); }
