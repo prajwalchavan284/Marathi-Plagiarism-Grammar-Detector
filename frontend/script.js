@@ -158,6 +158,7 @@ function renderResults(data, previewText) {
     gList.innerHTML = '';
     if (errors.length === 0) {
         gList.innerHTML = '<div class="no-issues"><i class="bi bi-check-circle-fill"></i> No issues found</div>';
+        document.getElementById('grammar-correction-container').style.display = 'none';
     } else {
         errors.forEach(e => {
             const item = document.createElement('div');
@@ -179,6 +180,14 @@ function renderResults(data, previewText) {
                 ${sugs ? `<div class="gsug">${sugs}</div>` : ''}`;
             gList.appendChild(item);
         });
+        
+        // Show corrected text
+        if (gram.corrected_text) {
+            document.getElementById('grammar-correction-container').style.display = 'block';
+            document.getElementById('grammar-corrected-text').textContent = gram.corrected_text;
+        } else {
+            document.getElementById('grammar-correction-container').style.display = 'none';
+        }
     }
 
     // --- Preview ---

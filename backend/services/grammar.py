@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 # ── Marathi-specific patterns ─────────────────────────────────────────────────
 
 # Marathi sentence boundary characters
-DANDA = "\u0964"      # ।
-DOUBLE_DANDA = "\u0965"  # ॥
+DANDA = "."      # Modern Marathi uses English period
+DOUBLE_DANDA = "."
 
 # ── Gender Agreement Pairs ────────────────────────────────────────────────────
 # Format: (feminine_pronoun, masculine_noun) → should raise an error
@@ -119,23 +119,23 @@ class MarathiGrammarDetector:
             "corrected_text": self._autocorrect(text, errors)
         }
 
-    # ── Rule 1: Sentences should end with दंड (।) ─────────────────────────────
+    # ── Rule 1: Sentences should end with Period (.) ──────────────────────────
     def _check_danda(self, text: str, errors: List) -> None:
-        sentences = re.split(r'[।॥\n]', text)
+        sentences = re.split(r'[।॥\n.]', text)
         char_offset = 0
         for sent in sentences:
             s = sent.strip()
             # Only flag if the sentence has meaningful Devanagari characters
             if s and re.search(r'[\u0900-\u097F]{5,}', s):
-                # Last non-whitespace char is not a danda/double-danda/English period
+                # Last non-whitespace char is not a period, danda or question mark
                 if not re.search(r'[।॥.!?]$', s):
                     errors.append({
-                        "message": "वाक्याच्या शेवटी दंड (।) असणे आवश्यक आहे",
-                        "english": "Sentence may be missing a Marathi full stop (।) at the end",
+                        "message": "वाक्याच्या शेवटी पूर्णविराम (.) असणे आवश्यक आहे",
+                        "english": "Sentence missing a full stop (.) at the end",
                         "offset": char_offset,
                         "length": len(s),
                         "context": s[:60],
-                        "replacements": [s + "।"],
+                        "replacements": [s + "."],
                         "ruleIssueType": "punctuation"
                     })
             char_offset += len(sent) + 1  # +1 for the split char
@@ -185,18 +185,20 @@ class MarathiGrammarDetector:
                 })
             char_offset += len(sent) + 1
 
-    # ── Rule 5: Missing space after danda ─────────────────────────────────────
+    # ── Rule 5: Missing space after period ────────────────────────────────────
     def _check_missing_space_after_danda(self, text: str, errors: List) -> None:
-        for m in re.finditer(r'[।॥][^\s\n।॥]', text):
-            errors.append({
-                "message": "दंड (।) नंतर रिकामी जागा नाही",
-                "english": "Missing space after Marathi full stop (।)",
-                "offset": m.start(),
-                "length": 2,
-                "context": text[m.start():m.start()+15],
-                "replacements": [text[m.start()] + " " + text[m.start()+1]],
-                "ruleIssueType": "punctuation"
-            })
+        for m in re.finditer(r'[.।॥][^\s\n।॥.!?]', text):
+            # Ignore numbers like 3.14
+            if not re.match(r'\d\.\d', text[m.start()-1:m.start()+2]):
+                errors.append({
+                    "message": "पूर्णविरामानंतर (.) रिकामी जागा नाही",
+                    "english": "Missing space after full stop (.)",
+                    "offset": m.start(),
+                    "length": 2,
+                    "context": text[m.start():m.start()+15],
+                    "replacements": [text[m.start()] + " " + text[m.start()+1]],
+                    "ruleIssueType": "punctuation"
+                })
 
     # ── Rule 6: Repeated punctuation (!!, ??, ।।) ─────────────────────────────
     def _check_repeated_punctuation(self, text: str, errors: List) -> None:
@@ -238,15 +240,37 @@ class MarathiGrammarDetector:
                     "ruleIssueType": "whitespace"
                 })
 
-    # ── Simple auto-correct (applies safe replacements) ───────────────────────
+    # ── Auto-correct Engine ───────────────────────────────────────────────────
     def _autocorrect(self, text: str, errors: List) -> str:
+        if not errors:
+            return text
+            
         corrected = text
-        # Only apply whitespace and punctuation auto-fixes (safe changes)
+        # Apply strict string replacement based on exact offsets in reverse order 
+        # so earlier offsets don't shift when we replace later text.
+        
+        # Sort errors by offset descending
+        sorted_errors = sorted(errors, key=lambda x: x["offset"], reverse=True)
+        
+        for e in sorted_errors:
+            if e["replacements"] and e["replacements"][0] and e["ruleIssueType"] in ["spelling", "whitespace"]:
+                # Only forcefully inject direct word replacements for spelling and spacing. 
+                # Grammar hints are advice, not 1-to-1 word drop-ins.
+                rep = e["replacements"][0]
+                start = e["offset"]
+                end = start + e["length"]
+                corrected = corrected[:start] + rep + corrected[end:]
+
+        # Finally apply safe global whitespace/punctuation fixes
         corrected = re.sub(r'  +', ' ', corrected)                 # double spaces
         corrected = re.sub(r'([!?।,])\1+', r'\1', corrected)       # repeated punct
-        corrected = re.sub(r'([।॥])([^\s\n।॥])', r'\1 \2', corrected)  # space after danda
-        corrected = corrected.strip()
-        return corrected
+        corrected = re.sub(r'([।॥.])([^\s\n।॥.!?])', r'\1 \2', corrected)  # space after period
+        # Fix missing periods
+        if [e for e in errors if "missing a full stop" in e["english"]]:
+             if not re.search(r'[।॥.!?]$', corrected.strip()):
+                  corrected = corrected.strip() + "."
+        
+        return corrected.strip()
 
     # ── Universal Regex Helper for Devanagari ─────────────────────────────────
     def _apply_rule(self, rule: Dict[str, str], text: str, errors: List, issue_type: str) -> None:
