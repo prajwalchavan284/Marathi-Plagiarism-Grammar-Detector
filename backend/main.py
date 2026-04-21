@@ -78,7 +78,7 @@ async def analyze_text(request: AnalyzeTextRequest):
     else:
         plagiarism_results = plagiarism_detector.detect_plagiarism_single(text)
 
-    grammar_results = grammar_detector.check_grammar(text)
+    grammar_results = await grammar_detector.check_grammar_async(text)
 
     return {"plagiarism": plagiarism_results, "grammar": grammar_results}
 
