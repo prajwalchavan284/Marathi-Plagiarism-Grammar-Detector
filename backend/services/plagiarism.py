@@ -82,7 +82,6 @@ class EnhancedSimilarityCalculator:
     def __init__(self, config: PlagiarismConfig):
         self.config = config
         self.text_processor = MarathiTextProcessor()
-        self.text_processor = MarathiTextProcessor()
         # Vectorizer will be instantiated locally per request to handle different corpus sizes
         try:
             available_models = [
