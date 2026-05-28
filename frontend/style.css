@@ -1,35 +1,27 @@
-/* ─────────────────────────────────────────────
-   DeepCheck – Cross-Platform Design System
-   Works on: macOS Safari/Chrome, Windows Chrome/Edge/Firefox
-────────────────────────────────────────────── */
 
 :root {
-    /* Accent Colors */
-    --blue:   #0071E3;   /* slightly darker than iOS blue – renders well on Windows */
+    
+    --blue:   #0071E3;   
     --red:    #D93025;
     --green:  #1E8A3E;
-    --grey-1: #1D1D1F;   /* primary label */
-    --grey-2: #6E6E73;   /* secondary label */
-    --grey-3: #AEAEB2;   /* placeholder */
-    --grey-4: #D1D1D6;   /* separator */
-    --grey-5: #E8E8ED;   /* subtle bg */
-    --grey-6: #F5F5F7;   /* page bg */
+    --grey-1: #1D1D1F;   
+    --grey-2: #6E6E73;   
+    --grey-3: #AEAEB2;   
+    --grey-4: #D1D1D6;   
+    --grey-5: #E8E8ED;   
+    --grey-6: #F5F5F7;   
     --white:  #FFFFFF;
 
-    /* Radii */
     --r-sm: 8px;
     --r-md: 12px;
     --r-lg: 16px;
 
-    /* Shadows – cross-platform friendly (no blur exploit) */
     --shadow-card: 0 1px 2px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.08);
     --shadow-btn:  0 1px 4px rgba(0,113,227,.3);
 }
 
-/* ── Reset ────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ── Base ─────────────────────────────────── */
 html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -38,8 +30,7 @@ html {
 }
 
 body {
-    /* Universal font stack:
-       Inter on all platforms, then system fallbacks for Mac (SF Pro)/Windows (Segoe UI) */
+    
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
     background: var(--grey-6);
     color: var(--grey-1);
@@ -47,23 +38,20 @@ body {
     min-height: 100vh;
 }
 
-/* ── Custom Scrollbar (works Chrome, Edge; hidden on Firefox which uses native) */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--grey-4); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--grey-3); }
 
-/* ── Navigation Bar ───────────────────────── */
 .nav-bar {
     position: sticky;
     top: 0;
     z-index: 100;
-    /* fallback for browsers without backdrop-filter */
+    
     background: rgba(245,245,247,0.95);
     border-bottom: 1px solid var(--grey-4);
 }
 
-/* Progressive enhancement – add blur only where supported */
 @supports (backdrop-filter: blur(1px)) {
     .nav-bar {
         background: rgba(245,245,247,0.82);
@@ -89,7 +77,6 @@ body {
 .nav-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.2px; }
 .nav-subtitle { font-size: 0.78rem; color: var(--grey-2); }
 
-/* ── Page Layout ──────────────────────────── */
 .page {
     max-width: 960px;
     margin: 0 auto;
@@ -99,16 +86,14 @@ body {
     gap: 1.25rem;
 }
 
-/* ── iOS-style Card ───────────────────────── */
 .ios-card {
     background: var(--white);
     border-radius: var(--r-lg);
     padding: 1.5rem;
     box-shadow: var(--shadow-card);
-    border: 1px solid var(--grey-4);   /* visible on Windows LCD */
+    border: 1px solid var(--grey-4);   
 }
 
-/* ── Card Title Row ───────────────────────── */
 .ios-card-title-row {
     display: flex;
     align-items: flex-start;
@@ -142,7 +127,6 @@ body {
     border: 1px solid var(--grey-4);
 }
 
-/* ── Segmented Control ────────────────────── */
 .seg-control {
     display: inline-flex;
     background: var(--grey-5);
@@ -173,11 +157,9 @@ body {
     box-shadow: 0 1px 4px rgba(0,0,0,.10);
 }
 
-/* ── Panels ───────────────────────────────── */
 .panel { display: none; }
 .panel.active { display: block; }
 
-/* ── Textarea ─────────────────────────────── */
 .ios-textarea {
     width: 100%;
     background: var(--grey-5);
@@ -200,7 +182,6 @@ body {
     box-shadow: 0 0 0 3px rgba(0,113,227,.12);
 }
 
-/* ── Drop Zone ────────────────────────────── */
 .drop-zone {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -227,7 +208,6 @@ body {
     font-size: 0.78rem; font-weight: 500;
 }
 
-/* ── Primary Button ───────────────────────── */
 .ios-btn {
     display: flex; align-items: center; justify-content: center;
     gap: 0.45rem;
@@ -250,7 +230,6 @@ body {
 .ios-btn:active  { transform: scale(0.985); }
 .ios-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
-/* ── Error Message ────────────────────────── */
 .error-msg {
     margin-top: 0.7rem;
     font-size: 0.83rem;
@@ -258,7 +237,6 @@ body {
     font-weight: 500;
 }
 
-/* ── Spinner ──────────────────────────────── */
 .spinner {
     width: 17px; height: 17px;
     border: 2px solid rgba(255,255,255,.35);
@@ -268,7 +246,6 @@ body {
 }
 .hidden { display: none !important; }
 
-/* ── Results ──────────────────────────────── */
 .metrics-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -289,7 +266,6 @@ body {
     text-transform: uppercase; letter-spacing: 0.06em;
 }
 
-/* ── Score Ring (Android Custom ROM Battery Style) ───────────── */
 .ring-wrap { position: relative; width: 140px; height: 140px; }
 .score-ring { width: 140px; height: 140px; transform: rotate(-90deg); filter: drop-shadow(0 2px 8px rgba(0,0,0,0.06)); }
 .ring-bg { fill: none; stroke: var(--grey-4); stroke-width: 12; opacity: 0.4; }
@@ -301,7 +277,7 @@ body {
     transition: stroke-dashoffset 1.5s cubic-bezier(0.17, 0.67, 0.14, 1.03), stroke 0.5s ease;
     filter: drop-shadow(0 0 5px rgba(0,0,0,0.1));
 }
-/* Colorful Glows */
+
 .ring-glow-green  { filter: drop-shadow(0 0 8px rgba(46, 204, 113, 0.6)); }
 .ring-glow-yellow { filter: drop-shadow(0 0 8px rgba(241, 196, 15, 0.6)); }
 .ring-glow-red    { filter: drop-shadow(0 0 8px rgba(231, 76, 60, 0.6)); }
@@ -314,7 +290,6 @@ body {
 .ring-pct { font-size: 2.4rem; font-weight: 800; letter-spacing: -1.5px; line-height: 0.9; margin-bottom: 2px; transition: color 0.4s; }
 .ring-sub { font-size: 0.7rem; color: var(--grey-2); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
 
-/* ── Status Pill ──────────────────────────── */
 .status-pill {
     display: inline-flex; align-items: center; gap: 0.3rem;
     border-radius: 20px;
@@ -329,7 +304,6 @@ body {
 
 .match-text { font-size: 0.74rem; color: var(--grey-2); text-align: center; white-space: pre-line; }
 
-/* ── Grammar ──────────────────────────────── */
 .grammar-hero { text-align: center; margin-bottom: 0.75rem; width: 100%; }
 .gram-number  { font-size: 3.2rem; font-weight: 700; letter-spacing: -2px; display: block; }
 .gram-label   { font-size: 0.75rem; color: var(--grey-2); }
@@ -355,13 +329,27 @@ body {
     font-size: 0.74rem; font-weight: 500;
     cursor: default;
 }
+
+.sev-badge {
+    display: inline-block;
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    vertical-align: middle;
+    margin-left: 0.3rem;
+}
+.sev-critical   { background: rgba(217,48,37,.12); color: #D93025; }
+.sev-warning    { background: rgba(243,156,18,.12); color: #e67e22; }
+.sev-suggestion { background: rgba(0,113,227,.08);  color: var(--blue); }
 .no-issues {
     color: var(--green); font-size: 0.85rem;
     text-align: center; padding: 1rem 0;
     display: flex; align-items: center; justify-content: center; gap: 0.35rem;
 }
 
-/* ── Text Preview ─────────────────────────── */
 .preview-icon { font-size: 1rem; color: var(--grey-2); }
 .text-pre {
     background: var(--grey-5);
@@ -378,7 +366,6 @@ body {
     margin-top: 0.75rem;
 }
 
-/* ── Animations ───────────────────────────── */
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @keyframes fadeUp {
@@ -387,7 +374,6 @@ body {
 }
 #results { animation: fadeUp 0.3s ease; }
 
-/* ── Responsive ───────────────────────────── */
 @media (max-width: 640px) {
     .page { padding: 1rem 0.85rem 4rem; gap: 1rem; }
     .metrics-row { grid-template-columns: 1fr; }
@@ -395,7 +381,6 @@ body {
     .ios-card { padding: 1.1rem; }
 }
 
-/* ── Desktop large screens ────────────────── */
 @media (min-width: 1200px) {
     .page { max-width: 1100px; }
     .metrics-row { grid-template-columns: 1fr 1fr; }

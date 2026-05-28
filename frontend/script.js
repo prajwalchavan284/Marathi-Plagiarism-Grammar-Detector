@@ -1,12 +1,10 @@
 const API = window.API_BASE || "http://localhost:8000/api";
 
-// ── Segmented Controls ─────────────────────────────────────────────────────
 document.querySelectorAll('.seg-control').forEach(ctrl => {
     ctrl.querySelectorAll('.seg-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             ctrl.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            // Hide all panels in the parent card and show the targeted one
             const card = ctrl.closest('.ios-card');
             card.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
             document.getElementById(btn.dataset.target).classList.add('active');
@@ -14,7 +12,6 @@ document.querySelectorAll('.seg-control').forEach(ctrl => {
     });
 });
 
-// ── File Drop Setup ────────────────────────────────────────────────────────
 function setupFile(inputId, chipId) {
     const input = document.getElementById(inputId);
     const chip  = document.getElementById(chipId);
@@ -36,7 +33,6 @@ function setupFile(inputId, chipId) {
 const getRefFile    = setupFile('ref-file-input',    'ref-file-name');
 const getTargetFile = setupFile('target-file-input', 'target-file-name');
 
-// ── Core Elements ──────────────────────────────────────────────────────────
 const analyzeBtn = document.getElementById('analyze-btn');
 const btnLabel   = document.getElementById('btn-label');
 const btnIcon    = document.getElementById('btn-icon');
@@ -52,7 +48,6 @@ function setLoading(on) {
     errorMsg.textContent = '';
 }
 
-// ── Analyze ────────────────────────────────────────────────────────────────
 analyzeBtn.addEventListener('click', async () => {
     const refText    = document.getElementById('ref-text-input').value.trim();
     const targetText = document.getElementById('target-text-input').value.trim();
@@ -116,14 +111,12 @@ analyzeBtn.addEventListener('click', async () => {
     }
 });
 
-// ── Render ─────────────────────────────────────────────────────────────────
 function renderResults(data, previewText) {
     const plag = data.plagiarism || {};
     const gram = data.grammar   || {};
 
-    // --- Plagiarism Ring (Android Battery Style - 3 Tier Colors) ---
     const pct = Math.round(plag.max_similarity || 0);
-    const circ = 2 * Math.PI * 48; // r=48 → 301.6
+    const circ = 2 * Math.PI * 48;
 
     let ringGradient, ringColor, pillText, pillClass, glowClass;
 
@@ -165,7 +158,6 @@ function renderResults(data, previewText) {
         matchEl.textContent = 'No significant matches found';
     }
 
-    // --- Grammar ---
     const errors = gram.errors || [];
     const countEl = document.getElementById('gram-count');
     countEl.textContent = errors.length;
@@ -182,23 +174,22 @@ function renderResults(data, previewText) {
             item.className = 'grammar-item';
             const sugs = (e.replacements || []).slice(0, 3)
                 .map(r => {
-                    // shorten long replacement suggestions
                     const short = r.length > 40 ? r.substring(0, 40) + '…' : r;
                     return `<span class="sug-pill">${short}</span>`;
                 }).join('');
-            // Show English description as headline, Marathi as subtitle
-            const headline = e.english || e.message || 'Grammar issue';
-            const subtitle = e.english && e.message ? e.message : '';
-            const ctx      = e.context || '';
+            const headline = e.english || 'Grammar Issue';
+            const subtitle = e.message || '';
+            const sevLabel = (e.severity || '').toLowerCase();
+            const sevClass = sevLabel === 'critical' ? 'sev-critical'
+                           : sevLabel === 'warning'  ? 'sev-warning'
+                           :                           'sev-suggestion';
             item.innerHTML = `
-                <div class="gmsg">${headline}</div>
+                <div class="gmsg">${headline} <span class="sev-badge ${sevClass}">${sevLabel}</span></div>
                 ${subtitle ? `<div class="gctx" style="color:var(--grey-1);font-style:normal;">${subtitle}</div>` : ''}
-                ${ctx ? `<div class="gctx">${ctx}</div>` : ''}
                 ${sugs ? `<div class="gsug">${sugs}</div>` : ''}`;
             gList.appendChild(item);
         });
         
-        // Show corrected text
         if (gram.corrected_text) {
             document.getElementById('grammar-correction-container').style.display = 'block';
             document.getElementById('grammar-corrected-text').textContent = gram.corrected_text;
@@ -209,14 +200,12 @@ function renderResults(data, previewText) {
 
     resultsEl.classList.remove('hidden');
     
-    // Defer SVG ring painting so the CSS transition fires after layout
     setTimeout(() => {
         const fg = document.getElementById('ring-fg');
         fg.setAttribute('stroke-dasharray', circ);
         fg.setAttribute('stroke-dashoffset', circ - (pct / 100) * circ);
         fg.style.stroke = ringGradient;
         
-        // Apply glow
         fg.classList.remove('ring-glow-green', 'ring-glow-yellow', 'ring-glow-red');
         fg.classList.add(glowClass);
         

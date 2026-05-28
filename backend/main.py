@@ -1,19 +1,20 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Form
+import io
+import logging
+import os
+from typing import Optional
+
+import pdfplumber
+import uvicorn
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import Optional
-import uvicorn
-import logging
-import io
-import pdfplumber
-import os
+
+from services.grammar import grammar_detector
+from services.plagiarism import plagiarism_detector
 
 logger = logging.getLogger(__name__)
-
-from services.plagiarism import plagiarism_detector
-from services.grammar import grammar_detector
 
 app = FastAPI(title="Marathi Plagiarism & Grammar API")
 
@@ -25,10 +26,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
 
 async def extract_text(upload: UploadFile) -> str:
-    """Extract text from either a .txt or .pdf UploadFile."""
     content = await upload.read()
     name = upload.filename or ""
 
@@ -46,16 +45,12 @@ async def extract_text(upload: UploadFile) -> str:
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"PDF parsing error: {e}")
 
-    # Treat as plain text
     try:
         return content.decode("utf-8")
     except UnicodeDecodeError:
         raise HTTPException(status_code=400, detail="File is not valid UTF-8 text.")
 
 
-# ── Endpoints ─────────────────────────────────────────────────────────────────
-
-# Serve the main HTML page at the root URL
 @app.get("/")
 async def serve_index():
     index_path = os.path.join(os.path.dirname(__file__), "../frontend/index.html")
@@ -89,14 +84,12 @@ async def analyze_file(
     reference_file: Optional[UploadFile] = File(None),
     reference_text: Optional[str] = Form(None)
 ):
-    # Validate extensions
     allowed = (".txt", ".pdf")
     if not any(file.filename.lower().endswith(e) for e in allowed):
         raise HTTPException(status_code=400, detail="Only .txt or .pdf files are supported.")
 
     text = await extract_text(file)
 
-    # Resolve reference text
     ref_text = None
     if reference_file and reference_file.filename:
         ref_text = await extract_text(reference_file)
@@ -112,7 +105,6 @@ async def analyze_file(
 
     return {"text": text[:2000], "plagiarism": plagiarism_results, "grammar": grammar_results}
 
-# Mount the rest of the frontend folder (CSS, JS, etc.)
 frontend_dir = os.path.join(os.path.dirname(__file__), "../frontend")
 app.mount("/", StaticFiles(directory=frontend_dir), name="frontend")
 

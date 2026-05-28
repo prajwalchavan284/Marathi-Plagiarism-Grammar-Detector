@@ -7,10 +7,40 @@ import re
 import string
 import logging
 from dataclasses import dataclass
-from typing import List, Tuple, Dict, Any, Optional
+from typing import List, Tuple, Dict, Any, Optional, Set
 import unicodedata
 
 logger = logging.getLogger(__name__)
+
+
+def _ngram_preprocess(text: str) -> List[str]:
+    text = text.lower()
+    text = re.sub(r'[^\u0900-\u097F\u0020a-zA-Z0-9\s]', '', text)
+    return text.split()
+
+def _generate_ngrams(tokens: List[str], n: int = 5) -> Set[str]:
+    return set(" ".join(tokens[i:i+n]) for i in range(len(tokens) - n + 1))
+
+def _jaccard_similarity(set1: Set[str], set2: Set[str]) -> float:
+    if not set1 or not set2:
+        return 0.0
+    return len(set1 & set2) / len(set1 | set2)
+
+def _length_penalty(text1: str, text2: str) -> float:
+    l1, l2 = len(text1.split()), len(text2.split())
+    return abs(l1 - l2) / max(l1, l2, 1)
+
+def _ngram_jaccard(text1: str, text2: str, n: int = 5) -> float:
+    tokens1 = _ngram_preprocess(text1)
+    tokens2 = _ngram_preprocess(text2)
+    effective_n = min(n, len(tokens1), len(tokens2))
+    if effective_n < 2:
+        return _jaccard_similarity(set(tokens1), set(tokens2))
+    return _jaccard_similarity(
+        _generate_ngrams(tokens1, effective_n),
+        _generate_ngrams(tokens2, effective_n),
+    )
+
 
 @dataclass
 class PlagiarismConfig:
@@ -82,7 +112,6 @@ class EnhancedSimilarityCalculator:
     def __init__(self, config: PlagiarismConfig):
         self.config = config
         self.text_processor = MarathiTextProcessor()
-        # Vectorizer will be instantiated locally per request to handle different corpus sizes
         try:
             available_models = [
                 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
@@ -180,7 +209,21 @@ class EnhancedMarathiPlagiarismDetector:
         tfidf_sim = self.similarity_calculator.calculate_tfidf_similarity_batch([query_text], self.corpus)[0]
         bert_sim = self.similarity_calculator.calculate_bert_similarity_batch([query_text], self.corpus)[0]
 
-        ensemble_sim = (self.config.tfidf_weight * tfidf_sim) + (self.config.bert_weight * bert_sim)
+        jaccard_scores = np.array([
+            _ngram_jaccard(query_text, doc) for doc in self.corpus
+        ])
+
+        len_penalties = np.array([
+            _length_penalty(query_text, doc) for doc in self.corpus
+        ])
+
+        ensemble_sim = (
+            0.25 * tfidf_sim
+            + 0.50 * bert_sim
+            + 0.20 * jaccard_scores
+            - 0.05 * len_penalties
+        )
+        ensemble_sim = np.clip(ensemble_sim, 0.0, 1.0)
 
         max_similarity = float(np.max(ensemble_sim))
         max_index = int(np.argmax(ensemble_sim))
@@ -204,7 +247,6 @@ class EnhancedMarathiPlagiarismDetector:
         }
 
     def _split_sentences(self, text: str) -> List[str]:
-        """Split Marathi/Hindi text into sentences on punctuation boundaries."""
         parts = re.split(r'[.\u0964\u0965\n]', text)
         return [s.strip() for s in parts if s.strip() and len(s.strip()) > 5]
 
@@ -214,7 +256,6 @@ class EnhancedMarathiPlagiarismDetector:
 
         logger.info(f"Custom comparison | query_len={len(query_text)} ref_len={len(reference_text)}")
 
-        # Fast shortcut: identical texts
         if query_text.strip() == reference_text.strip():
             return {
                 'is_plagiarized': True,
@@ -226,11 +267,12 @@ class EnhancedMarathiPlagiarismDetector:
 
         threshold = self.config.threshold
 
-        # Split BOTH into sentences for granular matching
+        doc_jaccard = _ngram_jaccard(query_text, reference_text, n=5)
+        doc_len_penalty = _length_penalty(query_text, reference_text)
+
         ref_sentences = self._split_sentences(reference_text)
         query_sentences = self._split_sentences(query_text)
 
-        # Fallback: treat entire texts as single unit
         if not ref_sentences:
             ref_sentences = [reference_text]
         if not query_sentences:
@@ -241,21 +283,29 @@ class EnhancedMarathiPlagiarismDetector:
         best_score = 0.0
         best_ref_sent = ''
         sentence_results = []
+        query_best_scores = []
+        query_best_bert = []
 
         for q in query_sentences:
+            q_best = 0.0
+            q_best_b = 0.0
             for r in ref_sentences:
-                # Character-level sequence match
                 seq = SequenceMatcher(None, q, r).ratio()
 
-                # Run TF-IDF + BERT only for plausible pairs
-                if seq > 0.1:
+                jaccard = _ngram_jaccard(q, r, n=3)
+
+                len_pen = _length_penalty(q, r)
+
+                if seq > 0.1 or jaccard > 0.05:
                     tfidf = float(self.similarity_calculator.calculate_tfidf_similarity_batch([q], [r])[0][0])
                     bert = float(self.similarity_calculator.calculate_bert_similarity_batch([q], [r])[0][0])
                 else:
                     tfidf, bert = 0.0, 0.0
 
-                # Weighted blend: 40% seq (exact match), 30% tfidf, 30% bert
-                score = float(np.clip(0.4 * seq + 0.3 * tfidf + 0.3 * bert, 0.0, 1.0))
+                score = float(np.clip(
+                    0.15 * seq + 0.10 * tfidf + 0.55 * bert + 0.15 * jaccard - 0.05 * len_pen,
+                    0.0, 1.0
+                ))
 
                 sentence_results.append({
                     'query_sentence': q[:100],
@@ -264,24 +314,50 @@ class EnhancedMarathiPlagiarismDetector:
                     'is_plagiarized': bool(score >= threshold)
                 })
 
+                if score > q_best:
+                    q_best = score
+                if bert > q_best_b:
+                    q_best_b = bert
                 if score > best_score:
                     best_score = score
                     best_ref_sent = r
 
+            query_best_scores.append(q_best)
+            query_best_bert.append(q_best_b)
+
         sentence_results.sort(key=lambda x: x['similarity'], reverse=True)
 
+        if query_best_scores:
+            sorted_scores = sorted(query_best_scores, reverse=True)
+            top_half = sorted_scores[:max(1, len(sorted_scores) // 2)]
+            top_avg = float(np.mean(top_half))
+            full_avg = float(np.mean(query_best_scores))
+
+            avg_bert = float(np.mean(query_best_bert))
+
+            plag_count = sum(1 for s in query_best_scores if s >= threshold)
+            coverage = plag_count / len(query_best_scores)
+
+            overall_score = float(np.clip(
+                0.20 * best_score + 0.10 * top_avg + 0.15 * full_avg
+                + 0.30 * avg_bert + 0.15 * coverage + 0.05 * doc_jaccard
+                - 0.05 * doc_len_penalty,
+                0.0, 1.0
+            ))
+        else:
+            overall_score = best_score
+
         return {
-            'is_plagiarized': bool(best_score >= threshold),
-            'max_similarity': round(best_score * 100, 2),
-            'matched_document': 'Uploaded Reference Text' if best_score >= threshold else None,
+            'is_plagiarized': bool(overall_score >= threshold),
+            'max_similarity': round(overall_score * 100, 2),
+            'matched_document': 'Uploaded Reference Text' if overall_score >= threshold else None,
             'matched_sentence': best_ref_sent,
             'detailed_results': [{
                 'document_name': 'Uploaded Reference Text',
-                'similarity': round(best_score * 100, 2),
-                'is_plagiarized': bool(best_score >= threshold)
+                'similarity': round(overall_score * 100, 2),
+                'is_plagiarized': bool(overall_score >= threshold)
             }],
             'sentence_matches': sentence_results[:10]
         }
 
-# Global instance for easier API use
 plagiarism_detector = EnhancedMarathiPlagiarismDetector()

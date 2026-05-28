@@ -6,23 +6,20 @@ from typing import Dict, List, Any, Optional, Set, Tuple
 
 @dataclass
 class GrammarError:
-    """One detected grammar violation."""
-    category:        str   # ORTHOGRAPHY / MORPHOLOGY / SYNTAX / LEXICAL / SURFACE
+    category:        str
     sub_category:    str
     erroneous_token: str
     suggested_token: str
     character_offset: int
     token_length:    int
-    severity:        str   # CRITICAL / WARNING / SUGGESTION
+    severity:        str
     explanation:     str
-
 
 
 _DEV_RANGE = '\u0900-\u097F'
 
 
 def _wb(word: str) -> str:
-    """Devanagari-aware word boundary wrap."""
     return rf'(?<![{_DEV_RANGE}]){re.escape(word)}(?![{_DEV_RANGE}])'
 
 
@@ -55,9 +52,35 @@ def _scan_regex(text: str, rules: list, errors: list,
             _add(errors, cat, sub, m.group(), rep, m.start(), sev, exp)
 
 
+_FRIENDLY_LABELS: Dict[Tuple[str, str], str] = {
+    ('ORTHOGRAPHY', 'SPELLING'):              'Spelling Mistake',
+    ('ORTHOGRAPHY', 'SANDHI'):                'Word Joining Error',
+    ('ORTHOGRAPHY', 'REPETITION'):            'Repeated Word',
+    ('ORTHOGRAPHY', 'PUNCTUATION'):           'Punctuation Error',
+    ('MORPHOLOGY',  'VIBHAKTI'):              'Case Marker Error',
+    ('MORPHOLOGY',  'NEGATION'):              'Negation Error',
+    ('SYNTAX',      'Subject-Verb Agreement'):         'Subject-Verb Agreement',
+    ('SYNTAX',      'DEMONSTRATIVE_GENDER'):  'Pronoun-Gender Mismatch',
+    ('SYNTAX',      'RELATIVE_PRONOUN_GENDER'): 'Pronoun-Gender Mismatch',
+    ('SYNTAX',      'ADJECTIVE_GENDER'):      'Adjective-Gender Mismatch',
+    ('SYNTAX',      'POSSESSIVE_GENDER'):     'Possessive-Gender Mismatch',
+    ('SYNTAX',      'CONTINUOUS_TENSE'):      'Tense Error',
+    ('SYNTAX',      'AUXILIARY'):             'Auxiliary Verb Error',
+    ('SYNTAX',      'WORD_ORDER'):            'Word Order Issue',
+    ('SYNTAX',      'CLAUSE_PAIRING'):        'Incomplete Clause',
+    ('LEXICAL',     'DIALECT'):               'Non-Standard Usage',
+    ('SURFACE',     'DOUBLE_SPACE'):          'Extra Whitespace',
+    ('SURFACE',     'REPEATED_PUNCT'):        'Repeated Punctuation',
+    ('SURFACE',     'DIGIT_IN_DEVANAGARI'):   'Mixed Script (Digits)',
+    ('SURFACE',     'SENTENCE_TOO_LONG'):     'Sentence Too Long',
+}
+
+def _friendly_label(category: str, sub_category: str) -> str:
+    return _FRIENDLY_LABELS.get((category, sub_category), sub_category.replace('_', ' ').title())
+
+
 class KB:
 
-    # ── Noun Gender Sets ───────────────────────────────────────────────────────
     MASC_NOUNS: Set[str] = {
         'मुलगा', 'पोरगा', 'भाऊ', 'बाप', 'दादा', 'काका', 'मामा', 'आजोबा',
         'नवरा', 'भाऊजी', 'मित्र', 'शत्रू', 'राजा', 'देव', 'कुत्रा', 'घोडा',
@@ -88,9 +111,7 @@ class KB:
         'शहर', 'राज्य', 'राष्ट्र',
     }
 
-    # ── Spelling / Shuddhalekhan ───────────────────────────────────────────────
     SPELLING: Dict[str, str] = {
-        # Vowel-length
         'नाहि':       'नाही',
         'नाहीं':      'नाही',
         'खुप':        'खूप',
@@ -106,7 +127,6 @@ class KB:
         'हळू हळू':    'हळूहळू',
         'महीना':      'महिना',
         'माहीती':     'माहिती',
-        # Anusvara / nasalization
         'अन्त':       'अंत',
         'चिन्ता':     'चिंता',
         'पन्ख':       'पंख',
@@ -115,7 +135,6 @@ class KB:
         'मन्दिर':     'मंदिर',
         'सम्पूर्ण':   'संपूर्ण',
         'संपर्ण':     'संपूर्ण',
-        # Double-letter / gemination
         'आहेे':       'आहे',
         'आहेत्':      'आहेत',
         'नाहीी':      'नाही',
@@ -124,7 +143,6 @@ class KB:
         'सुध्दा':     'सुद्धा',
         'बुध्दी':     'बुद्धी',
         'विद्दार्थी': 'विद्यार्थी',
-        # Morpheme / inflection
         'आणी':        'आणि',
         'आणिक':       'आणखी',
         'परंतू':      'परंतु',
@@ -139,14 +157,12 @@ class KB:
         'म्हनून':     'म्हणून',
         'म्हनायला':   'म्हणायला',
         'पूत्र':      'पुत्र',
-        # Colloquial contractions
         'दिलाय':      'दिला आहे',
         'केलाय':      'केला आहे',
         'आलाय':       'आला आहे',
         'गेलाय':      'गेला आहे',
         'हवाये':      'हवा आहे',
         'नकोये':      'नको आहे',
-        # Confused pairs
         'भेटली':      'मिळाली',
         'भेटला':      'मिळाला',
         'बद्धल':      'बद्दल',
@@ -164,12 +180,10 @@ class KB:
         'कारण की':    'कारण',
         'परंतु पण':   'परंतु',
         'म्हणून तर':  'म्हणून',
-        # Formal pronoun forms (old) → modern
         'आपणास':     'आपल्याला',
         'तुम्हास':   'तुम्हाला',
         'त्यांस':    'त्यांना',
         'त्यास':     'त्याला',
-        # Continuous tense errors — तो form
         'सांगतो आहे': 'सांगत आहे',
         'बघतो आहे':   'बघत आहे',
         'करतो आहे':   'करत आहे',
@@ -183,52 +197,40 @@ class KB:
         'लिहितो आहे': 'लिहित आहे',
         'वाचतो आहे':  'वाचत आहे',
         'शिकतो आहे':  'शिकत आहे',
-        # Continuous tense errors — ती form
-        # NOTE: These are handled by _check_continuous regex rules.
-        # Do NOT add them here as they conflict with the GNP pass.
-        # Continuous (other)
         'जाती आहे':   'जात आहे',
         'येती आहे':   'येत आहे',
         'खाती आहे':   'खात आहे',
-        # Future tense typos
         'येतेल':      'येईल',
         'जाईेल':      'जाईल',
         'होईेल':      'होईल',
         'करईल':       'करेल',
         'बघईल':       'बघेल',
         'होऊन जाईल': 'होईल',
-        # Perfect tense errors
         'गेलेला आहे': 'गेला आहे',
         'केलेला आहे': 'केला आहे',
         'आलेला आहे':  'आला आहे',
         'केलेत':      'केले',
         'गेलेत':      'गेले',
         'आलेत':       'आले',
-        # Negation spelling
         'करत नाहि':  'करत नाही',
         'जात नाहि':  'जात नाही',
         'येत नाहि':  'येत नाही',
         'बोलत नाहि': 'बोलत नाही',
         'सांगत नाहि':'सांगत नाही',
-        # Complex tense combo
         'जातो होती':   'जात होते',
         'जाते होती':   'जात होते',
         'करतो होती':   'करत होते',
         'खेळतो होती':  'खेळत होते',
         'शाळा जातो होती': 'शाळेत जात होते',
-        # Plural + wrong verb (spelling-level fix)
         'मुलं खेळत होता': 'मुले खेळत होती',
         'मुलं खेळत होते': 'मुले खेळत होती',
-        # 1st person plural past
         'आम्ही खूप हसले': 'आम्ही खूप हसलो',
         'आम्ही हसले':     'आम्ही हसलो',
-        # Possessive genitive
         'माझी मित्रला':  'माझ्या मित्राला',
         'माझी मित्राला': 'माझ्या मित्राला',
     }
     SPELLING = {k: v for k, v in SPELLING.items() if k != v}
 
-    # ── Sandhi ────────────────────────────────────────────────────────────────
     SANDHI: Dict[str, str] = {
         'सूर्य उदय':   'सूर्योदय',
         'सुर्य उदय':   'सूर्योदय',
@@ -239,9 +241,7 @@ class KB:
         'ग्राम उदय':   'ग्रामोदय',
     }
 
-    # ── Vibhakti Case-Marker Rules ─────────────────────────────────────────────
     VIBHAKTI: List[Tuple[str, str, str]] = [
-        # Locative misuse
         (_wb('शाळेला'),    'शाळेत',      'Locative: शाळेत (not शाळेला)'),
         (_wb('बाजाराला'),  'बाजारात',    'Locative: बाजारात (not बाजाराला)'),
         (_wb('घराला'),     'घरात',       'Locative: घरात (not घराला)'),
@@ -250,10 +250,8 @@ class KB:
         (_wb('ऑफिसला'),   'ऑफिसमध्ये',  'Locative: ऑफिसमध्ये (not ऑफिसला)'),
         (_wb('मुंबईमधे'),  'मुंबईत',     'Locative: मुंबईत preferred'),
         (_wb('शहरामधे'),   'शहरात',      'Locative: शहरात preferred'),
-        # Incorrect inflection forms
         (_wb('घरत'),       'घरात',       'घर → सामान्यरूप घरा- → घरात'),
         (_wb('शाळात'),     'शाळेत',      'शाळा → सामान्यरूप शाळे- → शाळेत'),
-        # Pronoun vibhakti
         (_wb('मीला'),      'मला',        'Dwiteeyaa of मी → मला'),
         (_wb('मीचा'),      'माझा',       'Possessive of मी → माझा'),
         (_wb('तूला'),      'तुला',       'Dwiteeyaa of तू → तुला'),
@@ -266,7 +264,6 @@ class KB:
         (_wb('आम्हीला'),   'आम्हाला',    'आम्हाला (not आम्हीला)'),
         (_wb('तुम्हीला'),  'तुम्हाला',   'तुम्हाला (not तुम्हीला)'),
         (_wb('त्यांला'),   'त्यांना',    'Dative plural: त्यांना'),
-        # Redundant stacking (from reference code 2)
         (_wb('भावालाने'),  'भावाने',     'Redundant vibhakti stacking'),
         (_wb('गावाकडेला'), 'गावाकडे',    'Redundant: remove ला after कडे'),
         (r'(?<![^\s\u0900-\u097F])वर\s+ला(?=[\s\u0964.,!?]|$)', 'वर',
@@ -287,14 +284,11 @@ class KB:
          'Redundant stacking of ला and ने'),
         (r'(?<![^\s\u0900-\u097F])ने\s+ला(?=[\s\u0964.,!?]|$)', 'ने किंवा ला',
          'Redundant stacking of ने and ला'),
-        # त्याला ने → त्याने
         (_wb('त्याला ने'), 'त्याने', 'त्याला + ने → merge to त्याने'),
         (_wb('तिला ने'),   'तिने',   'तिला + ने → merge to तिने'),
     ]
 
-    # ── GNP Agreement Rules ────────────────────────────────────────────────────
     GNP: List[Dict[str, str]] = [
-        # ── मी (1st Sing.) ──
         {'s':'मी',    'w':'गेला',    'c':'गेलो',    'e':'मी + past masc. → गेलो'},
         {'s':'मी',    'w':'गेली',    'c':'गेलो',    'e':'मी + past → गेलो (masc.)'},
         {'s':'मी',    'w':'बोलला',   'c':'बोललो',   'e':'मी बोललो (1st masc.)'},
@@ -315,14 +309,12 @@ class KB:
         {'s':'मी',    'w':'आहेत',    'c':'आहे',     'e':'1st Sing. aux: मी आहे'},
         {'s':'मी',    'w':'होता',    'c':'होतो',    'e':'मी + past aux masc.: होतो'},
         {'s':'मी',    'w':'करतात',   'c':'करतो',    'e':'मी + करतात → करतो/करते'},
-        # ── आम्ही (1st Pl.) ──
         {'s':'आम्ही', 'w':'गेला',    'c':'गेलो',    'e':'आम्ही + past → गेलो'},
         {'s':'आम्ही', 'w':'गेली',    'c':'गेलो',    'e':'आम्ही + past → गेलो'},
         {'s':'आम्ही', 'w':'गेले',    'c':'गेलो',    'e':'आम्ही + past → गेलो'},
         {'s':'आम्ही', 'w':'आहे',     'c':'आहोत',    'e':'आम्ही + aux → आहोत'},
         {'s':'आम्ही', 'w':'आहात',    'c':'आहोत',    'e':'आम्ही + aux → आहोत'},
         {'s':'आम्ही', 'w':'आहेत',    'c':'आहोत',    'e':'आम्ही + aux → आहोत'},
-        # ── तू (2nd Sing.) ──
         {'s':'तू',    'w':'गेला',    'c':'गेलास',   'e':'तू + past masc. → गेलास'},
         {'s':'तू',    'w':'गेली',    'c':'गेलीस',   'e':'तू + past fem. → गेलीस'},
         {'s':'तू',    'w':'केला',    'c':'केलास',   'e':'तू + past trans. → केलास'},
@@ -331,7 +323,6 @@ class KB:
         {'s':'तू',    'w':'आहात',    'c':'आहेस',    'e':'2nd Sing.: तू आहेस'},
         {'s':'तू',    'w':'आहेत',    'c':'आहेस',    'e':'2nd Sing.: तू आहेस'},
         {'s':'तू',    'w':'करतो',    'c':'करतोस',   'e':'2nd Sing.: तू करतोस'},
-        # ── तुम्ही (2nd Pl. Honorific) ──
         {'s':'तुम्ही','w':'आहे',     'c':'आहात',    'e':'Honorific: तुम्ही आहात'},
         {'s':'तुम्ही','w':'आहोत',    'c':'आहात',    'e':'Honorific: तुम्ही आहात'},
         {'s':'तुम्ही','w':'आहेत',    'c':'आहात',    'e':'Honorific: तुम्ही आहात'},
@@ -345,7 +336,6 @@ class KB:
         {'s':'तुम्ही','w':'येतो',    'c':'येता',    'e':'Honorific present: तुम्ही येता'},
         {'s':'तुम्ही','w':'बोलतो',   'c':'बोलता',   'e':'Honorific present: तुम्ही बोलता'},
         {'s':'तुम्ही','w':'होता',    'c':'होतात',   'e':'Honorific past: तुम्ही होतात'},
-        # ── तो (3rd Sing. Masc.) ──
         {'s':'तो',    'w':'गेली',    'c':'गेला',    'e':'तो + fem. past → गेला'},
         {'s':'तो',    'w':'गेले',    'c':'गेला',    'e':'तो + pl/neu past → गेला'},
         {'s':'तो',    'w':'आहेत',    'c':'आहे',     'e':'3rd Sing.: तो आहे'},
@@ -358,7 +348,6 @@ class KB:
         {'s':'तो',    'w':'गाते',    'c':'गातो',    'e':'तो + गाते → गातो'},
         {'s':'तो',    'w':'हसते',    'c':'हसतो',    'e':'तो + हसते → हसतो'},
         {'s':'तो',    'w':'रडते',    'c':'रडतो',    'e':'तो + रडते → रडतो'},
-        # ── ती (3rd Sing. Fem.) ──
         {'s':'ती',    'w':'गेला',    'c':'गेली',    'e':'ती + masc. past → गेली'},
         {'s':'ती',    'w':'गेले',    'c':'गेली',    'e':'ती + neut. past → गेली'},
         {'s':'ती',    'w':'आहेत',    'c':'आहे',     'e':'3rd Sing. Fem.: ती आहे'},
@@ -370,18 +359,15 @@ class KB:
         {'s':'ती',    'w':'बोलतो',   'c':'बोलते',   'e':'ती + बोलतो → बोलते'},
         {'s':'ती',    'w':'हसतो',    'c':'हसते',    'e':'ती + हसतो → हसते'},
         {'s':'ती',    'w':'रडतो',    'c':'रडते',    'e':'ती + रडतो → रडते'},
-        # ── ते (3rd Pl. / Honorific) ──
         {'s':'ते',    'w':'गेला',    'c':'गेले',    'e':'3rd Pl. past: ते गेले'},
         {'s':'ते',    'w':'गेली',    'c':'गेले',    'e':'3rd Pl. past: ते गेले'},
         {'s':'ते',    'w':'आहे',     'c':'आहेत',    'e':'3rd Pl. aux: ते आहेत'},
         {'s':'ते',    'w':'आहोत',    'c':'आहेत',    'e':'3rd Pl.: ते आहेत'},
         {'s':'ते',    'w':'आहात',    'c':'आहेत',    'e':'3rd Pl.: ते आहेत'},
         {'s':'ते',    'w':'होता',    'c':'होते',    'e':'ते + होता → होते'},
-        # ── त्या (3rd Pl. Fem.) ──
         {'s':'त्या',  'w':'गेला',    'c':'गेल्या',  'e':'3rd Pl. Fem. past: त्या गेल्या'},
         {'s':'त्या',  'w':'गेले',    'c':'गेल्या',  'e':'3rd Pl. Fem. past: त्या गेल्या'},
         {'s':'त्या',  'w':'आहे',     'c':'आहेत',    'e':'3rd Pl. Fem.: त्या आहेत'},
-        # ── अनेकवचन subjects ──
         {'s':'मुलं',  'w':'आहे',     'c':'आहेत',    'e':'Plural: मुलं आहेत'},
         {'s':'मुलं',  'w':'होता',    'c':'होते',    'e':'मुलं होते (neut. pl.)'},
         {'s':'मुलं',  'w':'होती',    'c':'होते',    'e':'मुलं होते'},
@@ -390,8 +376,6 @@ class KB:
     ]
     GNP = [r for r in GNP if r['w'] != r['c']]
 
-    # ── Demonstrative Gender Rules ─────────────────────────────────────────────
-    # (wrong_dem, correct_dem, noun_set_key, explanation)
     DEMONSTRATIVE: List[Tuple[str, str, str, str]] = [
         ('हा',  'ही',  'FEM',  '"हा" + fem. noun → ही'),
         ('हा',  'हे',  'NEUT', '"हा" + neut. noun → हे'),
@@ -405,8 +389,6 @@ class KB:
         ('ती',  'ते',  'NEUT', '"ती" + neut. noun → ते'),
     ]
 
-    # ── Relative Pronoun Gender Rules ──────────────────────────────────────────
-    # (wrong_rel, correct_rel, noun_set_key, explanation)
     RELATIVE_PRONOUN: List[Tuple[str, str, str, str]] = [
         ('जी',  'जो',  'MASC', '"जी" (fem.) + masc. noun → जो'),
         ('जो',  'जी',  'FEM',  '"जो" (masc.) + fem. noun → जी'),
@@ -414,7 +396,6 @@ class KB:
         ('जे',  'जी',  'FEM',  '"जे" (pl.) + fem. sing. noun → जी'),
     ]
 
-    # ── Adjective Gender Agreement ─────────────────────────────────────────────
     ADJECTIVE_MAP: Dict[str, Dict[str, str]] = {
         'चांगला': {'FEM': 'चांगली', 'NEUT': 'चांगले'},
         'चांगली': {'MASC': 'चांगला', 'NEUT': 'चांगले'},
@@ -431,12 +412,10 @@ class KB:
         'काळा':   {'FEM': 'काळी',   'NEUT': 'काळे'},
         'पांढरा': {'FEM': 'पांढरी', 'NEUT': 'पांढरे'},
         'निळा':   {'FEM': 'निळी',   'NEUT': 'निळे'},
-        # invariants — kept empty so check skips them
         'लाल': {}, 'उंच': {}, 'हुशार': {}, 'गरीब': {}, 'श्रीमंत': {},
         'नवीन': {}, 'जड': {}, 'हलका': {},
     }
 
-    # ── Possessive Gender Agreement ────────────────────────────────────────────
     POSSESSIVES: Dict[str, Dict[str, str]] = {
         'त्याचा': {'FEM': 'त्याची',  'NEUT': 'त्याचे'},
         'त्याची': {'MASC': 'त्याचा', 'NEUT': 'त्याचे'},
@@ -466,7 +445,6 @@ class KB:
     POSS_NEUT: Set[str] = {'घर','पुस्तक','काम','मन','गाणे','फूल','झाड','दुकान',
                             'स्वप्न','आकाश','जग','शेत','जेवण'}
 
-    # ── Continuous Tense Regex Rules ───────────────────────────────────────────
     CONTINUOUS: List[Tuple[str, str, str]] = [
         (_wb('जाती आहे'),  'जात आहे',  'Continuous (f): जात आहे'),
         (_wb('येती आहे'),  'येत आहे',  'Continuous (f): येत आहे'),
@@ -475,7 +453,6 @@ class KB:
         (_wb('पिते आहे'),  'पीत आहे',  'Continuous: पीत आहे'),
     ]
 
-    # ── Auxiliary Agreement ────────────────────────────────────────────────────
     AUX: List[Tuple[str, str, str]] = [
         (_wb('मी आहोत'),    'मी आहे',      '1st Sing.: मी आहे'),
         (_wb('मी आहात'),    'मी आहे',      '1st Sing.: मी आहे'),
@@ -497,7 +474,6 @@ class KB:
         (_wb('त्या आहे'),   'त्या आहेत',  '3rd Pl. Fem.: त्या आहेत'),
     ]
 
-    # ── Negation Rules ─────────────────────────────────────────────────────────
     NEGATION: List[Tuple[str, str, str]] = [
         (_wb('नाहि'),       'नाही',     'Spelling of negation: नाही'),
         (_wb('नाही होता'),  'नव्हता',   'Past neg. Masc.: नव्हता'),
@@ -506,27 +482,22 @@ class KB:
         (_wb('नाही होतो'),  'नव्हतो',   'Past neg. 1st Pers.: नव्हतो'),
         (_wb('नाही आहे'),   'नाही',     'Redundant: नाही + आहे → नाही'),
         (_wb('नको नाही'),   'नको',      'Redundant double negation'),
-        # नाही should come AFTER verb stem, not before verb
         (r'(?<![{_DEV_RANGE}])नाही\s+(करतो|करते|जातो|जाते|येतो|येते|आहे|होतो|बोलतो|सांगतो)(?![{_DEV_RANGE}])',
          'verb + नाही',
          'नाही क्रियापदानंतर येते — नाही should come AFTER the verb stem (e.g. करत नाही)'),
     ]
 
-    # ── Word-Order / SOV Rules ─────────────────────────────────────────────────
     SOV_RULES: List[Tuple[str, str, str]] = [
-        # Verb at sentence start
         (r'(?:^|\u0964\s*)(आहे|होते|होता|होती|होतो|केले|केली|केला|गेला|गेली|गेले'
          r'|करतो|करते|करतात|जातो|जाते|जातात|येतो|येते|येतात'
          r'|बोलतो|बोलते|सांगतो|सांगते)\b',
          '[क्रियापद शेवटी हवे]',
          'मराठीत क्रियापद शेवटी येते (SOV order) — Verb should be at end of clause'),
-        # तुम्ही + non-honorific verb
         (r'\bतुम्ही\s+[\u0900-\u097F]+\s+(करतो|जातो|येतो|बोलतो)\b',
          'करता / जाता / येता / बोलता',
          'तुम्ही सोबत आदरार्थी रूप वापरा: करता/जाता/येता/बोलता'),
     ]
 
-    # ── Dialect Normalization ──────────────────────────────────────────────────
     DIALECT: Dict[str, str] = {
         'कायला':  'का',      'कोन्या': 'कोणत्या',
         'कुठं':   'कोठे',   'कवा':    'केव्हा',
@@ -537,9 +508,7 @@ class KB:
     }
     DIALECT = {k: v for k, v in DIALECT.items() if k != v}
 
-    # ── Complex Clause Pairs ───────────────────────────────────────────────────
     CLAUSE_PAIRS: List[Tuple[str, str, str]] = [
-        # Longer openers before shorter (avoids जरी being caught by जर rule)
         ('जोपर्यंत', 'तोपर्यंत', 'Durative "जोपर्यंत" needs "तोपर्यंत"'),
         ('जेव्हा',   'तेव्हा',   'Temporal "जेव्हा" needs "तेव्हा"'),
         ('जितका',    'तितका',    'Comparative "जितका" needs "तितका"'),
@@ -549,26 +518,19 @@ class KB:
         ('जे',       'ते',       'Relative "जे" needs "ते"'),
     ]
 
-    # ── Question Words ─────────────────────────────────────────────────────────
     QUESTION_WORDS: Set[str] = {
         'कोण', 'काय', 'कुठे', 'कोठे', 'केव्हा', 'कधी', 'किती',
         'कसा', 'कशी', 'कसे', 'कोणता', 'कोणती', 'कोणते',
         'कुठून', 'का', 'कशासाठी',
     }
 
-    # ── Severity Weights ───────────────────────────────────────────────────────
     WEIGHTS: Dict[str, float] = {
         'SYNTAX': 15.0, 'MORPHOLOGY': 10.0, 'ORTHOGRAPHY': 5.0,
         'LEXICAL': 4.0, 'SURFACE': 1.5, 'SUGGESTION': 0.5,
     }
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# GRAMMAR ENGINE
-# ══════════════════════════════════════════════════════════════════════════════
-
 class MarathiGrammarEngine:
-    """Full offline rule-based Marathi grammar engine — 23+ rule categories."""
 
     def __init__(self):
         self.kb = KB()
@@ -589,23 +551,19 @@ class MarathiGrammarEngine:
                 result.append((s, m.start()))
         return result or [(text, 0)]
 
-    # ── Pass 1: Spelling ──────────────────────────────────────────────────────
     def _check_spelling(self, text: str, errors: list):
         _scan_pairs(text, self.kb.SPELLING, errors,
                     'ORTHOGRAPHY', 'SPELLING', 'WARNING', "Spelling: '{w}' → '{r}'")
 
-    # ── Pass 2: Sandhi ────────────────────────────────────────────────────────
     def _check_sandhi(self, text: str, errors: list):
         _scan_pairs(text, self.kb.SANDHI, errors,
                     'ORTHOGRAPHY', 'SANDHI', 'WARNING',
                     "Sandhi: '{w}' → '{r}'")
 
-    # ── Pass 3: Vibhakti ──────────────────────────────────────────────────────
     def _check_vibhakti(self, text: str, errors: list):
         _scan_regex(text, self.kb.VIBHAKTI, errors,
                     'MORPHOLOGY', 'VIBHAKTI', 'CRITICAL')
 
-    # ── Pass 4: GNP Agreement ────────────────────────────────────────────────
     def _check_gnp(self, text: str, errors: list):
         for rule in self.kb.GNP:
             sm = re.search(_wb(rule['s']), text)
@@ -615,7 +573,6 @@ class MarathiGrammarEngine:
                      rule['w'], rule['c'], vm.start(), 'CRITICAL',
                      f"GNP: {rule['e']}")
 
-    # ── Pass 5: Demonstrative Gender ─────────────────────────────────────────
     def _check_demonstrative(self, text: str, errors: list):
         for dem, correct, ns_key, exp in self.kb.DEMONSTRATIVE:
             for noun in self._noun_sets[ns_key]:
@@ -627,7 +584,6 @@ class MarathiGrammarEngine:
                              dem, correct, m.start(), 'CRITICAL',
                              f'{exp} (before "{noun}")')
 
-    # ── Pass 6: Relative Pronoun Gender ──────────────────────────────────────
     def _check_relative_pronoun(self, text: str, errors: list):
         for rel, correct, ns_key, exp in self.kb.RELATIVE_PRONOUN:
             for noun in self._noun_sets[ns_key]:
@@ -639,7 +595,6 @@ class MarathiGrammarEngine:
                              rel, correct, m.start(), 'CRITICAL',
                              f'{exp} (before "{noun}")')
 
-    # ── Pass 7: Adjective Gender ──────────────────────────────────────────────
     def _check_adjective_gender(self, text: str, errors: list):
         for adj, corrections in self.kb.ADJECTIVE_MAP.items():
             if not corrections:
@@ -654,7 +609,6 @@ class MarathiGrammarEngine:
                                  adj, correct_adj, m.start(), 'CRITICAL',
                                  f'Adjective "{adj}" + "{noun}" ({ns_key}) → "{correct_adj}"')
 
-    # ── Pass 8: Possessive Gender ─────────────────────────────────────────────
     def _check_possessive_gender(self, text: str, errors: list):
         poss_sets = {'FEM': self.kb.POSS_FEM, 'MASC': self.kb.POSS_MASC,
                      'NEUT': self.kb.POSS_NEUT}
@@ -669,41 +623,32 @@ class MarathiGrammarEngine:
                                  poss, correct_poss, m.start(), 'CRITICAL',
                                  f'Possessive: "{poss}" + "{noun}" ({ns_key}) → "{correct_poss}"')
 
-    # ── Pass 9: Continuous Tense ──────────────────────────────────────────────
     def _check_continuous(self, text: str, errors: list):
         _scan_regex(text, self.kb.CONTINUOUS, errors,
                     'SYNTAX', 'CONTINUOUS_TENSE', 'CRITICAL')
 
-    # ── Pass 10: Auxiliary ────────────────────────────────────────────────────
     def _check_aux(self, text: str, errors: list):
         _scan_regex(text, self.kb.AUX, errors, 'SYNTAX', 'AUXILIARY', 'CRITICAL')
 
-    # ── Pass 11: Negation ─────────────────────────────────────────────────────
     def _check_negation(self, text: str, errors: list):
         _scan_regex(text, self.kb.NEGATION, errors,
                     'MORPHOLOGY', 'NEGATION', 'WARNING')
 
-    # ── Pass 12: Vibhakti Stacking via GNP (already in VIBHAKTI list) ────────
 
-    # ── Pass 13: Word Order / SOV ─────────────────────────────────────────────
     def _check_sov(self, text: str, errors: list):
         for pat, rep, exp in self.kb.SOV_RULES:
             for m in re.finditer(pat, text, re.MULTILINE):
                 _add(errors, 'SYNTAX', 'WORD_ORDER', m.group(), rep,
                      m.start(), 'WARNING', exp)
 
-    # ── Pass 14: Dialect ──────────────────────────────────────────────────────
     def _check_dialect(self, text: str, errors: list):
         _scan_pairs(text, self.kb.DIALECT, errors,
                     'LEXICAL', 'DIALECT', 'SUGGESTION',
                     "Non-standard: '{w}' → '{r}'")
 
-    # ── Pass 15: Complex Clause Pairing ──────────────────────────────────────
     def _check_clause_pairing(self, text: str, errors: list):
         for sent, base in self._sentences(text):
             for opener, closer, exp in self.kb.CLAUSE_PAIRS:
-                # Use word-boundary aware search to avoid matching inside longer words
-                # e.g. "जे" should NOT match inside "पाहिजे"
                 opener_pat = _wb(opener)
                 closer_pat = _wb(closer)
                 opener_m = re.search(opener_pat, sent)
@@ -711,7 +656,6 @@ class MarathiGrammarEngine:
                     _add(errors, 'SYNTAX', 'CLAUSE_PAIRING',
                          opener, closer, base + opener_m.start(), 'WARNING', exp)
 
-    # ── Pass 16: Repetition ───────────────────────────────────────────────────
     def _check_repetition(self, text: str, errors: list):
         for m in re.finditer(
             rf'(?<![{_DEV_RANGE}])([{_DEV_RANGE}]+)\s+\1(?![{_DEV_RANGE}])', text
@@ -721,7 +665,6 @@ class MarathiGrammarEngine:
                  m.group(), word, m.start(), 'WARNING',
                  f'Repeated word: "{word}" appears twice consecutively')
 
-    # ── Pass 17: Question Punctuation ─────────────────────────────────────────
     def _check_question_punctuation(self, text: str, errors: list):
         for sent, base in self._sentences(text):
             s = sent.rstrip()
@@ -732,19 +675,15 @@ class MarathiGrammarEngine:
                          s[-1], '?', base + len(s) - 1, 'WARNING',
                          'Question sentence should end with ? not "' + s[-1] + '"')
 
-    # ── Pass 18: Surface Checks ───────────────────────────────────────────────
     def _check_surface(self, text: str, errors: list):
-        # Double spaces
         for m in re.finditer(r'  +', text):
             _add(errors, 'SURFACE', 'DOUBLE_SPACE',
                  m.group(), ' ', m.start(), 'SUGGESTION',
                  'Extra whitespace between words')
-        # Repeated punctuation (!!, ??, ।।)
         for m in re.finditer(r'([!?,।])\1+', text):
             _add(errors, 'SURFACE', 'REPEATED_PUNCT',
                  m.group(), m.group(1), m.start(), 'WARNING',
                  f'Punctuation "{m.group(1)}" repeated unnecessarily')
-        # English digits inside Devanagari words
         for m in re.finditer(
             rf'[{_DEV_RANGE}]+[0-9]+[{_DEV_RANGE}]*|[0-9]+[{_DEV_RANGE}]+', text
         ):
@@ -752,7 +691,6 @@ class MarathiGrammarEngine:
                  m.group(), '', m.start(), 'WARNING',
                  'English digits mixed with Devanagari characters')
 
-    # ── Pass 19: Sentence Length ──────────────────────────────────────────────
     def _check_sentence_length(self, text: str, errors: list):
         for sent, base in self._sentences(text):
             words = sent.strip().split()
@@ -762,19 +700,15 @@ class MarathiGrammarEngine:
                      f'Sentence is very long ({len(words)} words). Consider splitting.')
 
 
-    # ── Auto-Correct (Hard Repair) ────────────────────────────────────────────
     def hard_repair(self, text: str) -> str:
         work = self._normalize(text)
 
-        # 1. Spelling — longest first to avoid partial-match conflicts
         for w, r in sorted(self.kb.SPELLING.items(), key=lambda x: -len(x[0])):
             work = re.sub(_wb(w), r, work)
 
-        # 2. Sandhi
         for w, r in self.kb.SANDHI.items():
             work = re.sub(re.escape(w), r, work)
 
-        # 3. Vibhakti direct patterns
         vibhakti_direct = [
             (r'शाळेला\b',    'शाळेत'),
             (r'बाजाराला\b',  'बाजारात'),
@@ -798,11 +732,9 @@ class MarathiGrammarEngine:
         for pat, repl in vibhakti_direct:
             work = re.sub(pat, repl, work, flags=re.UNICODE)
 
-        # 4. Auxiliary
         for pat, rep, _ in self.kb.AUX:
             work = re.sub(pat, rep, work)
 
-        # 5. Clause-scoped verb agreement (cross-sentence safe — bounded by [^\n।.!?])
         verb_clause = [
             (r'\bमी\b([^\n\u0964.!?]*?)\bआहेत\b',   r'मी\1आहे'),
             (r'\bमी\b([^\n\u0964.!?]*?)\bआहोत\b',   r'मी\1आहे'),
@@ -841,19 +773,16 @@ class MarathiGrammarEngine:
         for pat, repl in verb_clause:
             work = re.sub(pat, repl, work, flags=re.UNICODE)
 
-        # 6. GNP simple-case fixes
         for rule in self.kb.GNP:
             if re.search(_wb(rule['s']), work):
                 work = re.sub(_wb(rule['w']), rule['c'], work)
 
-        # 7. Demonstrative gender
         for dem, correct, ns_key, _ in self.kb.DEMONSTRATIVE:
             for noun in self._noun_sets[ns_key]:
                 pat = (rf'(?<![{_DEV_RANGE}]){re.escape(dem)}'
                        rf'(\s+(?:\S+\s+)?{re.escape(noun)})(?![{_DEV_RANGE}])')
                 work = re.sub(pat, correct + r'\1', work)
 
-        # 8. Adjective gender
         for adj, corrections in self.kb.ADJECTIVE_MAP.items():
             for ns_key, correct_adj in corrections.items():
                 for noun in self._noun_sets[ns_key]:
@@ -861,7 +790,6 @@ class MarathiGrammarEngine:
                            rf'(\s+(?:\S+\s+)?{re.escape(noun)})(?![{_DEV_RANGE}])')
                     work = re.sub(pat, correct_adj + r'\1', work)
 
-        # 9. Possessive gender
         poss_sets = {'FEM': self.kb.POSS_FEM, 'MASC': self.kb.POSS_MASC,
                      'NEUT': self.kb.POSS_NEUT}
         for poss, corrections in self.kb.POSSESSIVES.items():
@@ -871,19 +799,16 @@ class MarathiGrammarEngine:
                            rf'(\s+(?:\S+\s+)?{re.escape(noun)})(?![{_DEV_RANGE}])')
                     work = re.sub(pat, correct_poss + r'\1', work)
 
-        # 10. Relative pronoun gender
         for rel, correct, ns_key, _ in self.kb.RELATIVE_PRONOUN:
             for noun in self._noun_sets[ns_key]:
                 pat = (rf'(?<![{_DEV_RANGE}]){re.escape(rel)}'
                        rf'(\s+(?:\S+\s+)?{re.escape(noun)})(?![{_DEV_RANGE}])')
                 work = re.sub(pat, correct + r'\1', work)
 
-        # 11. Repetition removal
         work = re.sub(
             rf'(?<![{_DEV_RANGE}])([{_DEV_RANGE}]+)\s+\1(?![{_DEV_RANGE}])',
             r'\1', work)
 
-        # 12. Surface cleanup
         work = re.sub(r'  +', ' ', work)
         work = re.sub(r'([!?,।])\1+', r'\1', work)
 
@@ -917,7 +842,6 @@ class MarathiGrammarEngine:
         self._check_surface(normalized, all_errors)
         self._check_sentence_length(normalized, all_errors)
 
-        # Deduplicate by offset
         seen: Set[int] = set()
         unique: List[GrammarError] = []
         for err in sorted(all_errors, key=lambda e: e.character_offset):
@@ -925,7 +849,6 @@ class MarathiGrammarEngine:
                 unique.append(err)
                 seen.add(err.character_offset)
 
-        # Score
         score = 100.0
         for err in unique:
             w = self.kb.WEIGHTS.get(err.category, 5.0)
@@ -946,7 +869,7 @@ class MarathiGrammarEngine:
         return {
             'errors': [{
                 'message':       e.explanation,
-                'english':       f'{e.category} → {e.sub_category}',
+                'english':       _friendly_label(e.category, e.sub_category),
                 'offset':        e.character_offset,
                 'length':        e.token_length,
                 'replacements':  [e.suggested_token],
@@ -966,12 +889,7 @@ class MarathiGrammarEngine:
         }
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# PUBLIC INTERFACE
-# ══════════════════════════════════════════════════════════════════════════════
-
 class MarathiGrammarDetector:
-    """Drop-in singleton — sync + async check_grammar methods."""
 
     def __init__(self):
         self._engine = MarathiGrammarEngine()
